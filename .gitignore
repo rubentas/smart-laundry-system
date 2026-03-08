@@ -26,3 +26,13 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Laravel Boost
+boost.json
+.mcp.json
+.cursor/
+.windsurf/
+.github/copilot/
+junie/
+AGENTS.md
+CLAUDE.md
