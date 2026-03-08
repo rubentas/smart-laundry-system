@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
     $middleware->alias([
       'role' => RoleMiddleware::class,
+      'redirect.role' => \App\Http\Middleware\RedirectBasedOnRole::class,
     ]);
   })
   ->withExceptions(function (Exceptions $exceptions): void {

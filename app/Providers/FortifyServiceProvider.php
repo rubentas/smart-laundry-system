@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use Hash;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,77 +16,96 @@ use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+  /**
+   * Register any application services.
+   */
+  public function register(): void
+  {
+    //
+  }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        $this->configureActions();
-        $this->configureViews();
-        $this->configureRateLimiting();
-    }
+  /**
+   * Bootstrap any application services.
+   */
+  public function boot(): void
+  {
+    $this->configureActions();
+    $this->configureViews();
+    $this->configureRateLimiting();
 
-    /**
-     * Configure Fortify actions.
-     */
-    private function configureActions(): void
-    {
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-        Fortify::createUsersUsing(CreateNewUser::class);
-    }
+    Fortify::authenticateUsing(function (Request $request) {
+      $user = \App\Models\User::where('email', $request->email)->first();
 
-    /**
-     * Configure Fortify views.
-     */
-    private function configureViews(): void
-    {
-        Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
-            'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
-            'status' => $request->session()->get('status'),
-        ]));
+      if ($user && Hash::check($request->password, $user->password)) {
+        // Redirect berdasarkan role
+        if ($user->hasRole('owner')) {
+          session()->put('url.intended', '/owner/dashboard');
+        } elseif ($user->hasRole('cashier')) {
+          session()->put('url.intended', '/cashier/dashboard');
+        } elseif ($user->hasRole('branch_admin')) {
+          session()->put('url.intended', '/admin/dashboard');
+        } else {
+          session()->put('url.intended', '/customer/dashboard');
+        }
 
-        Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
-            'email' => $request->email,
-            'token' => $request->route('token'),
-        ]));
+        return $user;
+      }
+    });
+  }
 
-        Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/forgot-password', [
-            'status' => $request->session()->get('status'),
-        ]));
+  /**
+   * Configure Fortify actions.
+   */
+  private function configureActions(): void
+  {
+    Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+    Fortify::createUsersUsing(CreateNewUser::class);
+  }
 
-        Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/verify-email', [
-            'status' => $request->session()->get('status'),
-        ]));
+  /**
+   * Configure Fortify views.
+   */
+  private function configureViews(): void
+  {
+    Fortify::loginView(fn(Request $request) => Inertia::render('auth/login', [
+      'canResetPassword' => Features::enabled(Features::resetPasswords()),
+      'canRegister' => Features::enabled(Features::registration()),
+      'status' => $request->session()->get('status'),
+    ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register'));
+    Fortify::resetPasswordView(fn(Request $request) => Inertia::render('auth/reset-password', [
+      'email' => $request->email,
+      'token' => $request->route('token'),
+    ]));
 
-        Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
+    Fortify::requestPasswordResetLinkView(fn(Request $request) => Inertia::render('auth/forgot-password', [
+      'status' => $request->session()->get('status'),
+    ]));
 
-        Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
-    }
+    Fortify::verifyEmailView(fn(Request $request) => Inertia::render('auth/verify-email', [
+      'status' => $request->session()->get('status'),
+    ]));
 
-    /**
-     * Configure rate limiting.
-     */
-    private function configureRateLimiting(): void
-    {
-        RateLimiter::for('two-factor', function (Request $request) {
-            return Limit::perMinute(5)->by($request->session()->get('login.id'));
-        });
+    Fortify::registerView(fn() => Inertia::render('auth/register'));
 
-        RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+    Fortify::twoFactorChallengeView(fn() => Inertia::render('auth/two-factor-challenge'));
 
-            return Limit::perMinute(5)->by($throttleKey);
-        });
-    }
+    Fortify::confirmPasswordView(fn() => Inertia::render('auth/confirm-password'));
+  }
+
+  /**
+   * Configure rate limiting.
+   */
+  private function configureRateLimiting(): void
+  {
+    RateLimiter::for('two-factor', function (Request $request) {
+      return Limit::perMinute(5)->by($request->session()->get('login.id'));
+    });
+
+    RateLimiter::for('login', function (Request $request) {
+      $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
+
+      return Limit::perMinute(5)->by($throttleKey);
+    });
+  }
 }
