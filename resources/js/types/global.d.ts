@@ -10,3 +10,13 @@ declare module '@inertiajs/core' {
         };
     }
 }
+
+declare global {
+    function route(): string;
+    function route(name: string, params?: Record<string, unknown> | number | string): string;
+    function route(name: string, params?: Record<string, unknown> | number | string, absolute?: boolean): string;
+    
+    interface Window {
+        route: typeof route;
+    }
+}
