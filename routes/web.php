@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -34,6 +35,10 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
   Route::resource('branches', BranchController::class);
+});
+
+Route::middleware(['auth', 'role:owner'])->prefix('owner')->group(function () {
+  Route::resource('services', ServiceController::class);
 });
 
 require __DIR__ . '/settings.php';
