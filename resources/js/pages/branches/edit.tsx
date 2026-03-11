@@ -38,7 +38,7 @@ export default function BranchEdit({ branch }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    put(route('branches.update', branch.id));
+    put(`/owner/branches/${branch.id}`);
   };
 
   return (
@@ -173,7 +173,7 @@ export default function BranchEdit({ branch }: Props) {
 
                 <div className="flex justify-end space-x-4">
                   <Link
-                    href={route('branches.index')}
+                    href="/owner/branches"
                     className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
                   >
                     Batal
