@@ -93,7 +93,7 @@ export default function CustomerDashboard({
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8">
@@ -113,81 +113,88 @@ export default function CustomerDashboard({
           </div>
 
           {/* Stats Cards */}
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">
+          <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            {/* Total Order */}
+            <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                     Total Order
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-indigo-600">
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-indigo-600">
                     {stats.totalOrders}
                   </p>
                 </div>
-                <div className="rounded-xl bg-indigo-50 p-3">
-                  <ShoppingBag className="h-6 w-6 text-indigo-600" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                  <ShoppingBag className="h-5 w-5 text-indigo-600" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">
+            {/* Total Belanja */}
+            <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                     Total Belanja
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-emerald-600">
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-600">
                     {formatCurrency(stats.totalSpent)}
                   </p>
                 </div>
-                <div className="rounded-xl bg-emerald-50 p-3">
-                  <DollarSign className="h-6 w-6 text-emerald-600" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">
+            {/* Sedang Diproses */}
+            <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                     Sedang Diproses
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-amber-600">
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-amber-600">
                     {stats.pendingOrders}
                   </p>
                 </div>
-                <div className="rounded-xl bg-amber-50 p-3">
-                  <Clock className="h-6 w-6 text-amber-600" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-50">
+                  <Clock className="h-5 w-5 text-amber-600" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">
+            {/* Siap Ambil */}
+            <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                     Siap Ambil
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-green-600">
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-green-600">
                     {stats.readyOrders}
                   </p>
                 </div>
-                <div className="rounded-xl bg-green-50 p-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green-50">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Selesai</p>
-                  <p className="mt-2 text-2xl font-bold text-emerald-600">
+            {/* Selesai */}
+            <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                    Selesai
+                  </p>
+                  <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-600">
                     {stats.completedOrders}
                   </p>
                 </div>
-                <div className="rounded-xl bg-emerald-50 p-3">
-                  <CheckCircle className="h-6 w-6 text-emerald-600" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
                 </div>
               </div>
             </div>
