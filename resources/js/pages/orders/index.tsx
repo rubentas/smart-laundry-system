@@ -16,8 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
-
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
+
 
 interface Order {
   id: number;

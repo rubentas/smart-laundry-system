@@ -1,5 +1,4 @@
 import { Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import {
   ArrowLeft,
   Save,
@@ -13,6 +12,7 @@ import {
   FileText,
   UserCircle2,
 } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
 
 export default function CustomerCreate() {
   const { data, setData, post, processing, errors } = useForm({
