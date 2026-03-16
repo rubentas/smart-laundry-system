@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 
-
 interface OrderItem {
   id: number;
   service_name: string;
@@ -249,6 +248,17 @@ export default function OrderShow({ order }: Props) {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Tombol Proses Pembayaran - Hanya muncul jika belum dibayar */}
+              {!order.is_paid && (
+                <Link
+                  href={`/owner/orders/${order.id}/payment`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Proses Pembayaran
+                </Link>
+              )}
+
               <button
                 onClick={() => setShowStatusDialog(true)}
                 className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
@@ -266,7 +276,7 @@ export default function OrderShow({ order }: Props) {
             </div>
           </div>
 
-          {/* Content Grid */}
+          {/* Content Grid - Sisanya tetap sama */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Left Column - Order Details */}
             <div className="space-y-6 lg:col-span-2">

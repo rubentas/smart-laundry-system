@@ -4,20 +4,38 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
   return Inertia::render('welcome');
 })->name('home');
 
+/*
+|--------------------------------------------------------------------------
+| Test Routes
+|--------------------------------------------------------------------------
+*/
 Route::get('/test-owner', function () {
   return 'Kamu owner!';
 })->middleware(['auth', 'role:owner']);
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes (All Roles)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth'])->group(function () {
-
+  // Role-based dashboards
   Route::get('/owner/dashboard', fn() => Inertia::render('owner/dashboard'))
     ->middleware('role:owner')
     ->name('owner.dashboard');
@@ -35,26 +53,59 @@ Route::middleware(['auth'])->group(function () {
     ->name('customer.dashboard');
 });
 
-// Owner Routes
-Route::middleware(['auth', 'role:owner'])->prefix('owner')->name('owner.')->group(function () {
-  // Resource routes
-  Route::resource('branches', BranchController::class);
-  Route::resource('services', ServiceController::class);
-  Route::resource('customers', CustomerController::class);
-  Route::resource('orders', OrderController::class);
+/*
+|--------------------------------------------------------------------------
+| Owner Routes (Full Access)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:owner'])
+  ->prefix('owner')
+  ->name('owner.')
+  ->group(function () {
 
-  // Custom order routes
-  Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
-  Route::get('orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
+    // Resource routes
+    Route::resource('branches', BranchController::class);
+    Route::resource('services', ServiceController::class);
+    Route::resource('customers', CustomerController::class);
+    Route::resource('orders', OrderController::class);
 
-  // Dashboard Owner
-  Route::get('/dashboard', [DashboardController::class, 'owner'])->name('dashboard');
+    // Custom order routes
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::get('orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
 
-  // Report routes
-  Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
-  Route::get('/reports/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
-  Route::get('/reports/export-pdf', [App\Http\Controllers\ReportController::class, 'exportPdf'])->name('reports.export-pdf');
-  Route::get('/reports/export-excel', [App\Http\Controllers\ReportController::class, 'exportExcel'])->name('reports.export-excel');
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'owner'])->name('dashboard');
+
+    // Report routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+      Route::get('/', [ReportController::class, 'index'])->name('index');
+      Route::get('generate', [ReportController::class, 'generate'])->name('generate');
+      Route::get('export-pdf', [ReportController::class, 'exportPdf'])->name('export-pdf');
+      Route::get('export-excel', [ReportController::class, 'exportExcel'])->name('export-excel');
+    });
+
+    // Payment routes
+    Route::prefix('orders/{order}/payment')->name('orders.payment.')->group(function () {
+      Route::get('/', [PaymentController::class, 'process'])->name('index');
+      Route::get('status', [PaymentController::class, 'checkStatus'])->name('status');
+    });
+  });
+
+/*
+|--------------------------------------------------------------------------
+| Public Payment Callbacks (No Auth Required)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('payment')->name('payment.')->group(function () {
+  Route::post('callback', [PaymentController::class, 'callback'])->name('callback');
+  Route::get('finish', [PaymentController::class, 'finish'])->name('finish');
+  Route::get('unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
+  Route::get('error', [PaymentController::class, 'error'])->name('error');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Settings Routes (from Breeze/Fortify)
+|--------------------------------------------------------------------------
+*/
 require __DIR__ . '/settings.php';
