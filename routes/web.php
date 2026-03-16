@@ -22,15 +22,15 @@ Route::middleware(['auth'])->group(function () {
     ->middleware('role:owner')
     ->name('owner.dashboard');
 
-  Route::get('/cashier/dashboard', fn() => Inertia::render('cashier/dashboard'))
+  Route::get('/cashier/dashboard', [DashboardController::class, 'cashier'])
     ->middleware('role:cashier')
     ->name('cashier.dashboard');
 
-  Route::get('/admin/dashboard', fn() => Inertia::render('admin/dashboard'))
+  Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
     ->middleware('role:branch_admin')
     ->name('admin.dashboard');
 
-  Route::get('/customer/dashboard', fn() => Inertia::render('customer/dashboard'))
+  Route::get('/customer/dashboard', [DashboardController::class, 'customer'])
     ->middleware('role:customer')
     ->name('customer.dashboard');
 });
@@ -49,6 +49,12 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner')->name('owner.')->grou
 
   // Dashboard Owner
   Route::get('/dashboard', [DashboardController::class, 'owner'])->name('dashboard');
+
+  // Report routes
+  Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+  Route::get('/reports/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
+  Route::get('/reports/export-pdf', [App\Http\Controllers\ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+  Route::get('/reports/export-excel', [App\Http\Controllers\ReportController::class, 'exportExcel'])->name('reports.export-excel');
 });
 
 require __DIR__ . '/settings.php';
