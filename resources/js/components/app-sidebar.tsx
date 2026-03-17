@@ -15,6 +15,7 @@ import {
   CreditCard,
   LineChart,
   HelpCircle,
+  Brain,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -84,6 +85,11 @@ export function AppSidebar() {
         title: 'Laporan',
         href: '/owner/reports',
         icon: BarChart3,
+      },
+      {
+        title: 'AI Insights',
+        href: '/owner/ai/insights',
+        icon: Brain,
       },
       {
         title: 'Pengaturan',
