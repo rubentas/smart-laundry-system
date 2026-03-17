@@ -89,6 +89,8 @@ Route::middleware(['auth', 'role:owner'])
       Route::get('/', [PaymentController::class, 'process'])->name('index');
       Route::get('status', [PaymentController::class, 'checkStatus'])->name('status');
     });
+
+    Route::post('/orders/{order}/send-notification', [OrderController::class, 'sendNotification'])->name('orders.send-notification');
   });
 
 /*

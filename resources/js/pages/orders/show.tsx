@@ -273,10 +273,32 @@ export default function OrderShow({ order }: Props) {
                 <Printer className="h-4 w-4" />
                 Cetak Nota
               </Link>
+
+              {order.customer?.phone && (
+                <button
+                  onClick={() => {
+                    if (confirm('Kirim notifikasi WhatsApp ke customer?')) {
+                      router.post(
+                        `/owner/orders/${order.id}/send-notification`,
+                      );
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  <svg
+                    className="h-4 w-4 text-green-600"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M19.077 4.928C17.191 3.041 14.683 2 12.006 2 6.798 2 2.537 6.193 2.523 11.396c-.005 1.745.456 3.452 1.328 4.985L2.25 21.75l5.421-1.572c1.466.796 3.113 1.216 4.804 1.217h.004c5.202 0 9.47-4.195 9.484-9.4.007-2.51-1.013-4.872-2.886-6.757zm-7.07 14.527c-1.494 0-2.958-.402-4.23-1.155l-.303-.18-3.215.933 1.004-3.115-.184-.316c-.821-1.38-1.256-2.977-1.253-4.614.011-4.284 3.49-7.762 7.78-7.762 2.082 0 4.036.813 5.507 2.284 1.472 1.471 2.282 3.426 2.278 5.507-.012 4.283-3.49 7.76-7.777 7.76h-.007z" />
+                  </svg>
+                  Kirim WA
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Content Grid - Sisanya tetap sama */}
+          {/* Content Grid */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Left Column - Order Details */}
             <div className="space-y-6 lg:col-span-2">
