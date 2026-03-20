@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BusinessSettingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
@@ -18,7 +19,7 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+  return Inertia::render('welcome');
 })->name('home');
 
 /*
@@ -27,7 +28,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/test-owner', function () {
-    return 'Kamu owner!';
+  return 'Kamu owner!';
 })->middleware(['auth', 'role:owner']);
 
 /*
@@ -36,22 +37,22 @@ Route::get('/test-owner', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
-    // Role-based dashboards
-    Route::get('/owner/dashboard', fn () => Inertia::render('owner/dashboard'))
-        ->middleware('role:owner')
-        ->name('owner.dashboard');
+  // Role-based dashboards
+  Route::get('/owner/dashboard', fn() => Inertia::render('owner/dashboard'))
+    ->middleware('role:owner')
+    ->name('owner.dashboard');
 
-    Route::get('/cashier/dashboard', [DashboardController::class, 'cashier'])
-        ->middleware('role:cashier')
-        ->name('cashier.dashboard');
+  Route::get('/cashier/dashboard', [DashboardController::class, 'cashier'])
+    ->middleware('role:cashier')
+    ->name('cashier.dashboard');
 
-    Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
-        ->middleware('role:branch_admin')
-        ->name('admin.dashboard');
+  Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
+    ->middleware('role:branch_admin')
+    ->name('admin.dashboard');
 
-    Route::get('/customer/dashboard', [DashboardController::class, 'customer'])
-        ->middleware('role:customer')
-        ->name('customer.dashboard');
+  Route::get('/customer/dashboard', [DashboardController::class, 'customer'])
+    ->middleware('role:customer')
+    ->name('customer.dashboard');
 });
 
 /*
@@ -60,42 +61,45 @@ Route::middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:owner'])
-    ->prefix('owner')
-    ->name('owner.')
-    ->group(function () {
+  ->prefix('owner')
+  ->name('owner.')
+  ->group(function () {
 
-        // Resource routes
-        Route::resource('branches', BranchController::class);
-        Route::resource('services', ServiceController::class);
-        Route::resource('customers', CustomerController::class);
-        Route::resource('orders', OrderController::class);
+    // Resource routes
+    Route::resource('branches', BranchController::class);
+    Route::resource('services', ServiceController::class);
+    Route::resource('customers', CustomerController::class);
+    Route::resource('orders', OrderController::class);
 
-        // Custom order routes
-        Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
-        Route::get('orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
+    // Custom order routes
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::get('orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
 
-        // Dashboard
-        Route::get('dashboard', [DashboardController::class, 'owner'])->name('dashboard');
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'owner'])->name('dashboard');
 
-        // Report routes
-        Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', [ReportController::class, 'index'])->name('index');
-            Route::get('generate', [ReportController::class, 'generate'])->name('generate');
-            Route::get('export-pdf', [ReportController::class, 'exportPdf'])->name('export-pdf');
-            Route::get('export-excel', [ReportController::class, 'exportExcel'])->name('export-excel');
-        });
-
-        // Payment routes
-        Route::prefix('orders/{order}/payment')->name('orders.payment.')->group(function () {
-            Route::get('/', [PaymentController::class, 'process'])->name('index');
-            Route::get('status', [PaymentController::class, 'checkStatus'])->name('status');
-        });
-
-        Route::post('/orders/{order}/send-notification', [OrderController::class, 'sendNotification'])->name('orders.send-notification');
-
-        Route::get('/ai/insights', [AIController::class, 'insights'])->name('ai.insights');
-        Route::post('/ai/refresh', [AIController::class, 'refresh'])->name('ai.refresh');
+    // Report routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+      Route::get('/', [ReportController::class, 'index'])->name('index');
+      Route::get('generate', [ReportController::class, 'generate'])->name('generate');
+      Route::get('export-pdf', [ReportController::class, 'exportPdf'])->name('export-pdf');
+      Route::get('export-excel', [ReportController::class, 'exportExcel'])->name('export-excel');
     });
+
+    // Payment routes
+    Route::prefix('orders/{order}/payment')->name('orders.payment.')->group(function () {
+      Route::get('/', [PaymentController::class, 'process'])->name('index');
+      Route::get('status', [PaymentController::class, 'checkStatus'])->name('status');
+    });
+
+    Route::post('/orders/{order}/send-notification', [OrderController::class, 'sendNotification'])->name('orders.send-notification');
+
+    Route::get('/ai/insights', [AIController::class, 'insights'])->name('ai.insights');
+    Route::post('/ai/refresh', [AIController::class, 'refresh'])->name('ai.refresh');
+
+    Route::get('/business/settings', [BusinessSettingController::class, 'index'])->name('business.settings');
+    Route::post('/business/settings', [BusinessSettingController::class, 'update'])->name('business.settings.update');
+  });
 
 /*
 |--------------------------------------------------------------------------
@@ -103,10 +107,10 @@ Route::middleware(['auth', 'role:owner'])
 |--------------------------------------------------------------------------
 */
 Route::prefix('payment')->name('payment.')->group(function () {
-    Route::post('callback', [PaymentController::class, 'callback'])->name('callback');
-    Route::get('finish', [PaymentController::class, 'finish'])->name('finish');
-    Route::get('unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
-    Route::get('error', [PaymentController::class, 'error'])->name('error');
+  Route::post('callback', [PaymentController::class, 'callback'])->name('callback');
+  Route::get('finish', [PaymentController::class, 'finish'])->name('finish');
+  Route::get('unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
+  Route::get('error', [PaymentController::class, 'error'])->name('error');
 });
 
 /*
@@ -114,4 +118,4 @@ Route::prefix('payment')->name('payment.')->group(function () {
 | Settings Routes (from Breeze/Fortify)
 |--------------------------------------------------------------------------
 */
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

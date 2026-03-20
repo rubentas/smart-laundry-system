@@ -16,6 +16,7 @@ import {
   LineChart,
   HelpCircle,
   Brain,
+  Settings2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -93,8 +94,8 @@ export function AppSidebar() {
       },
       {
         title: 'Pengaturan',
-        href: '/owner/settings',
-        icon: Settings,
+        href: '/owner/business/settings',
+        icon: Settings2,
       },
     ],
     branch_admin: [
