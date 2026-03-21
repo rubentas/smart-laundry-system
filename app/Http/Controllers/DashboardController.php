@@ -2,293 +2,296 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
 use App\Models\Customer;
-use Inertia\Inertia;
+use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-  // Owner
-  public function owner()
-  {
-    $today = now()->format('Y-m-d');
+    // Owner
+    public function owner()
+    {
+        $today = now()->format('Y-m-d');
 
-    $todayRevenue = Order::whereDate('order_date', $today)
-      ->where('status', '!=', 'cancelled')
-      ->sum('grand_total');
+        $todayRevenue = Order::whereDate('order_date', $today)
+            ->where('status', '!=', 'cancelled')
+            ->sum('grand_total');
 
-    $todayOrders = Order::whereDate('order_date', $today)->count();
+        $todayOrders = Order::whereDate('order_date', $today)->count();
 
-    $todayCustomers = Customer::whereDate('created_at', $today)->count();
+        $todayCustomers = Customer::whereDate('created_at', $today)->count();
 
-    $pendingOrders = Order::where('status', 'pending')->count();
-    $readyOrders = Order::where('status', 'ready_pickup')->count();
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $readyOrders = Order::where('status', 'ready_pickup')->count();
 
-    $revenueChart = Order::where('status', '!=', 'cancelled')
-      ->where('order_date', '>=', now()->subDays(6)->startOfDay())
-      ->select(
-        DB::raw('DATE(order_date) as date'),
-        DB::raw('SUM(grand_total) as total')
-      )
-      ->groupBy('date')
-      ->orderBy('date')
-      ->get()
-      ->keyBy('date')
-      ->map(function ($item) {
-        return $item->total;
-      });
+        $revenueChart = Order::where('status', '!=', 'cancelled')
+            ->where('order_date', '>=', now()->subDays(6)->startOfDay())
+            ->select(
+                DB::raw('DATE(order_date) as date'),
+                DB::raw('SUM(grand_total) as total')
+            )
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date')
+            ->map(function ($item) {
+                return $item->total;
+            });
 
-    $dates = collect();
-    for ($i = 6; $i >= 0; $i--) {
-      $date = now()->subDays($i)->format('Y-m-d');
-      $dates->put($date, $revenueChart[$date] ?? 0);
+        $dates = collect();
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dates->put($date, $revenueChart[$date] ?? 0);
+        }
+
+        $topServices = DB::table('order_items')
+            ->join('services', 'order_items.service_id', '=', 'services.id')
+            ->select(
+                'services.name',
+                DB::raw('COUNT(*) as total_orders'),
+                DB::raw('SUM(order_items.subtotal) as revenue')
+            )
+            ->where('order_items.created_at', '>=', now()->subDays(30))
+            ->groupBy('services.id', 'services.name')
+            ->orderByDesc('revenue')
+            ->limit(5)
+            ->get();
+
+        $recentOrders = Order::with(['customer'])
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer->name,
+                    'grand_total' => $order->grand_total,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at?->format('Y-m-d H:i'),
+                ];
+            });
+
+        return Inertia::render('dashboard/owner', [
+            'stats' => [
+                'todayRevenue' => $todayRevenue,
+                'todayOrders' => $todayOrders,
+                'todayCustomers' => $todayCustomers,
+                'pendingOrders' => $pendingOrders,
+                'readyOrders' => $readyOrders,
+                'averageOrder' => $todayOrders > 0
+                  ? $todayRevenue / $todayOrders
+                  : 0,
+            ],
+            'charts' => [
+                'revenue7days' => [
+                    'labels' => $dates->keys()->map(fn ($date) => now()->parse($date)->format('d M')),
+                    'data' => $dates->values(),
+                ],
+            ],
+            'topServices' => $topServices,
+            'recentOrders' => $recentOrders,
+            'branches' => \App\Models\Branch::all(),
+            'currentBranchId' => session('selected_branch_id'),
+        ]);
     }
 
-    $topServices = DB::table('order_items')
-      ->join('services', 'order_items.service_id', '=', 'services.id')
-      ->select(
-        'services.name',
-        DB::raw('COUNT(*) as total_orders'),
-        DB::raw('SUM(order_items.subtotal) as revenue')
-      )
-      ->where('order_items.created_at', '>=', now()->subDays(30))
-      ->groupBy('services.id', 'services.name')
-      ->orderByDesc('revenue')
-      ->limit(5)
-      ->get();
+    // Kasir
+    public function cashier()
+    {
+        $today = now()->format('Y-m-d');
+        $cashierId = auth()->id();
 
-    $recentOrders = Order::with(['customer'])
-      ->latest()
-      ->limit(10)
-      ->get()
-      ->map(function ($order) {
-        return [
-          'id' => $order->id,
-          'order_number' => $order->order_number,
-          'customer_name' => $order->customer->name,
-          'grand_total' => $order->grand_total,
-          'status' => $order->status,
-          'created_at' => $order->created_at?->format('Y-m-d H:i'),
+        // Statistik untuk kasir
+        $stats = [
+            'todayOrders' => Order::whereDate('order_date', $today)
+                ->where('cashier_id', $cashierId)
+                ->count(),
+
+            'todayRevenue' => Order::whereDate('order_date', $today)
+                ->where('cashier_id', $cashierId)
+                ->where('status', '!=', 'cancelled')
+                ->sum('grand_total'),
+
+            'pendingOrders' => Order::where('status', 'pending')
+                ->where('cashier_id', $cashierId)
+                ->count(),
+
+            'readyOrders' => Order::where('status', 'ready_pickup')
+                ->where('cashier_id', $cashierId)
+                ->count(),
+
+            'completedToday' => Order::whereDate('order_date', $today)
+                ->where('cashier_id', $cashierId)
+                ->where('status', 'completed')
+                ->count(),
         ];
-      });
 
-    return Inertia::render('dashboard/owner', [
-      'stats' => [
-        'todayRevenue' => $todayRevenue,
-        'todayOrders' => $todayOrders,
-        'todayCustomers' => $todayCustomers,
-        'pendingOrders' => $pendingOrders,
-        'readyOrders' => $readyOrders,
-        'averageOrder' => $todayOrders > 0
-          ? $todayRevenue / $todayOrders
-          : 0,
-      ],
-      'charts' => [
-        'revenue7days' => [
-          'labels' => $dates->keys()->map(fn($date) => now()->parse($date)->format('d M')),
-          'data' => $dates->values(),
-        ],
-      ],
-      'topServices' => $topServices,
-      'recentOrders' => $recentOrders,
-    ]);
-  }
-  // Kasir
-  public function cashier()
-  {
-    $today = now()->format('Y-m-d');
-    $cashierId = auth()->id();
+        // Order yang perlu diproses (pending)
+        $pendingOrders = Order::with('customer')
+            ->where('cashier_id', $cashierId)
+            ->whereIn('status', ['pending', 'washing', 'drying', 'ironing'])
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer->name,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->format('H:i, d M'),
+                ];
+            });
 
-    // Statistik untuk kasir
-    $stats = [
-      'todayOrders' => Order::whereDate('order_date', $today)
-        ->where('cashier_id', $cashierId)
-        ->count(),
+        // Order siap ambil
+        $readyOrders = Order::with('customer')
+            ->where('cashier_id', $cashierId)
+            ->where('status', 'ready_pickup')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer->name,
+                    'grand_total' => $order->grand_total,
+                    'created_at' => $order->created_at->format('H:i, d M'),
+                ];
+            });
 
-      'todayRevenue' => Order::whereDate('order_date', $today)
-        ->where('cashier_id', $cashierId)
-        ->where('status', '!=', 'cancelled')
-        ->sum('grand_total'),
-
-      'pendingOrders' => Order::where('status', 'pending')
-        ->where('cashier_id', $cashierId)
-        ->count(),
-
-      'readyOrders' => Order::where('status', 'ready_pickup')
-        ->where('cashier_id', $cashierId)
-        ->count(),
-
-      'completedToday' => Order::whereDate('order_date', $today)
-        ->where('cashier_id', $cashierId)
-        ->where('status', 'completed')
-        ->count(),
-    ];
-
-    // Order yang perlu diproses (pending)
-    $pendingOrders = Order::with('customer')
-      ->where('cashier_id', $cashierId)
-      ->whereIn('status', ['pending', 'washing', 'drying', 'ironing'])
-      ->latest()
-      ->limit(10)
-      ->get()
-      ->map(function ($order) {
-        return [
-          'id' => $order->id,
-          'order_number' => $order->order_number,
-          'customer_name' => $order->customer->name,
-          'status' => $order->status,
-          'created_at' => $order->created_at->format('H:i, d M'),
-        ];
-      });
-
-    // Order siap ambil
-    $readyOrders = Order::with('customer')
-      ->where('cashier_id', $cashierId)
-      ->where('status', 'ready_pickup')
-      ->latest()
-      ->limit(10)
-      ->get()
-      ->map(function ($order) {
-        return [
-          'id' => $order->id,
-          'order_number' => $order->order_number,
-          'customer_name' => $order->customer->name,
-          'grand_total' => $order->grand_total,
-          'created_at' => $order->created_at->format('H:i, d M'),
-        ];
-      });
-
-    return Inertia::render('dashboard/cashier', [
-      'stats' => $stats,
-      'pendingOrders' => $pendingOrders,
-      'readyOrders' => $readyOrders,
-    ]);
-  }
-
-  // Admin
-  public function admin()
-  {
-    $branchId = auth()->user()->branch_id;
-
-    if (!$branchId) {
-      return redirect()->back()->with('error', 'Anda tidak memiliki cabang');
+        return Inertia::render('dashboard/cashier', [
+            'stats' => $stats,
+            'pendingOrders' => $pendingOrders,
+            'readyOrders' => $readyOrders,
+        ]);
     }
 
-    $today = now()->format('Y-m-d');
+    // Admin
+    public function admin()
+    {
+        $branchId = auth()->user()->branch_id;
 
-    // Statistik cabang
-    $stats = [
-      'todayOrders' => Order::where('branch_id', $branchId)
-        ->whereDate('order_date', $today)
-        ->count(),
+        if (! $branchId) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki cabang');
+        }
 
-      'todayRevenue' => Order::where('branch_id', $branchId)
-        ->whereDate('order_date', $today)
-        ->where('status', '!=', 'cancelled')
-        ->sum('grand_total'),
+        $today = now()->format('Y-m-d');
 
-      'pendingOrders' => Order::where('branch_id', $branchId)
-        ->where('status', 'pending')
-        ->count(),
+        // Statistik cabang
+        $stats = [
+            'todayOrders' => Order::where('branch_id', $branchId)
+                ->whereDate('order_date', $today)
+                ->count(),
 
-      'readyOrders' => Order::where('branch_id', $branchId)
-        ->where('status', 'ready_pickup')
-        ->count(),
+            'todayRevenue' => Order::where('branch_id', $branchId)
+                ->whereDate('order_date', $today)
+                ->where('status', '!=', 'cancelled')
+                ->sum('grand_total'),
 
-      'totalCustomers' => Customer::whereHas('orders', function ($q) use ($branchId) {
-        $q->where('branch_id', $branchId);
-      })->count(),
+            'pendingOrders' => Order::where('branch_id', $branchId)
+                ->where('status', 'pending')
+                ->count(),
 
-      'avgOrderValue' => Order::where('branch_id', $branchId)
-        ->where('status', '!=', 'cancelled')
-        ->avg('grand_total') ?? 0,
-    ];
+            'readyOrders' => Order::where('branch_id', $branchId)
+                ->where('status', 'ready_pickup')
+                ->count(),
 
-    // Order hari ini
-    $todayOrders = Order::with('customer')
-      ->where('branch_id', $branchId)
-      ->whereDate('order_date', $today)
-      ->latest()
-      ->limit(10)
-      ->get();
+            'totalCustomers' => Customer::whereHas('orders', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            })->count(),
 
-    // Top services di cabang ini
-    $topServices = DB::table('order_items')
-      ->join('services', 'order_items.service_id', '=', 'services.id')
-      ->join('orders', 'order_items.order_id', '=', 'orders.id')
-      ->where('orders.branch_id', $branchId)
-      ->where('order_items.created_at', '>=', now()->subDays(30))
-      ->select(
-        'services.name',
-        DB::raw('COUNT(*) as total_orders'),
-        DB::raw('SUM(order_items.subtotal) as revenue')
-      )
-      ->groupBy('services.id', 'services.name')
-      ->orderByDesc('revenue')
-      ->limit(5)
-      ->get();
+            'avgOrderValue' => Order::where('branch_id', $branchId)
+                ->where('status', '!=', 'cancelled')
+                ->avg('grand_total') ?? 0,
+        ];
 
-    return Inertia::render('dashboard/admin', [
-      'stats' => $stats,
-      'todayOrders' => $todayOrders,
-      'topServices' => $topServices,
-      'branchName' => auth()->user()->branch->name ?? 'Cabang Saya',
-    ]);
-  }
+        // Order hari ini
+        $todayOrders = Order::with('customer')
+            ->where('branch_id', $branchId)
+            ->whereDate('order_date', $today)
+            ->latest()
+            ->limit(10)
+            ->get();
 
-  // Pelanggan
-  public function customer()
-  {
-    $customer = auth()->user()->customer; // Asumsi relasi user->customer
+        // Top services di cabang ini
+        $topServices = DB::table('order_items')
+            ->join('services', 'order_items.service_id', '=', 'services.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.branch_id', $branchId)
+            ->where('order_items.created_at', '>=', now()->subDays(30))
+            ->select(
+                'services.name',
+                DB::raw('COUNT(*) as total_orders'),
+                DB::raw('SUM(order_items.subtotal) as revenue')
+            )
+            ->groupBy('services.id', 'services.name')
+            ->orderByDesc('revenue')
+            ->limit(5)
+            ->get();
 
-    if (!$customer) {
-      // Kalau user adalah customer langsung (pakai tabel customers)
-      $customer = auth()->user();
+        return Inertia::render('dashboard/admin', [
+            'stats' => $stats,
+            'todayOrders' => $todayOrders,
+            'topServices' => $topServices,
+            'branchName' => auth()->user()->branch->name ?? 'Cabang Saya',
+        ]);
     }
 
-    $customerId = $customer->id;
+    // Pelanggan
+    public function customer()
+    {
+        $customer = auth()->user()->customer; // Asumsi relasi user->customer
 
-    // Statistik customer
-    $stats = [
-      'totalOrders' => Order::where('customer_id', $customerId)->count(),
-      'totalSpent' => Order::where('customer_id', $customerId)
-        ->where('status', '!=', 'cancelled')
-        ->sum('grand_total'),
-      'pendingOrders' => Order::where('customer_id', $customerId)
-        ->whereIn('status', ['pending', 'washing', 'drying', 'ironing'])
-        ->count(),
-      'readyOrders' => Order::where('customer_id', $customerId)
-        ->where('status', 'ready_pickup')
-        ->count(),
-      'completedOrders' => Order::where('customer_id', $customerId)
-        ->where('status', 'completed')
-        ->count(),
-      'memberSince' => $customer->created_at->format('d M Y'),
-    ];
+        if (! $customer) {
+            // Kalau user adalah customer langsung (pakai tabel customers)
+            $customer = auth()->user();
+        }
 
-    // Order terbaru
-    $recentOrders = Order::where('customer_id', $customerId)
-      ->with('branch')
-      ->latest()
-      ->limit(10)
-      ->get()
-      ->map(function ($order) {
-        return [
-          'id' => $order->id,
-          'order_number' => $order->order_number,
-          'branch_name' => $order->branch->name,
-          'grand_total' => $order->grand_total,
-          'status' => $order->status,
-          'created_at' => $order->created_at->format('d M Y H:i'),
-          'is_paid' => $order->is_paid,
+        $customerId = $customer->id;
+
+        // Statistik customer
+        $stats = [
+            'totalOrders' => Order::where('customer_id', $customerId)->count(),
+            'totalSpent' => Order::where('customer_id', $customerId)
+                ->where('status', '!=', 'cancelled')
+                ->sum('grand_total'),
+            'pendingOrders' => Order::where('customer_id', $customerId)
+                ->whereIn('status', ['pending', 'washing', 'drying', 'ironing'])
+                ->count(),
+            'readyOrders' => Order::where('customer_id', $customerId)
+                ->where('status', 'ready_pickup')
+                ->count(),
+            'completedOrders' => Order::where('customer_id', $customerId)
+                ->where('status', 'completed')
+                ->count(),
+            'memberSince' => $customer->created_at->format('d M Y'),
         ];
-      });
 
-    return Inertia::render('dashboard/customer', [
-      'stats' => $stats,
-      'recentOrders' => $recentOrders,
-      'customer' => $customer,
-    ]);
-  }
+        // Order terbaru
+        $recentOrders = Order::where('customer_id', $customerId)
+            ->with('branch')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'branch_name' => $order->branch->name,
+                    'grand_total' => $order->grand_total,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->format('d M Y H:i'),
+                    'is_paid' => $order->is_paid,
+                ];
+            });
+
+        return Inertia::render('dashboard/customer', [
+            'stats' => $stats,
+            'recentOrders' => $recentOrders,
+            'customer' => $customer,
+        ]);
+    }
 }

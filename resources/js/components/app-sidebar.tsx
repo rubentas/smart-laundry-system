@@ -19,6 +19,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { useState } from 'react';
+import BranchSelector from '@/components/branch-selector';
 
 type PageProps = {
   auth: {
@@ -26,8 +27,11 @@ type PageProps = {
       name: string;
       email: string;
       roles?: Array<{ name: string }>;
+      branch_id?: number | null;
     };
   };
+  branches?: Array<{ id: number; name: string; code: string }>;
+  currentBranchId?: number | null;
 };
 
 type MenuItem = {
@@ -44,7 +48,7 @@ type MenuConfig = Record<
 
 export function AppSidebar() {
   const page = usePage<PageProps>();
-  const { auth } = page.props;
+  const { auth, branches = [], currentBranchId = null } = page.props;
   const url = page.url;
   const user = auth.user;
   const [collapsed, setCollapsed] = useState(false);
@@ -162,6 +166,19 @@ export function AppSidebar() {
             <span className="h-1 w-1 rounded-full bg-slate-600" />
             <span>{user.email}</span>
           </div>
+        </div>
+      )}
+
+      {/* Branch Selector for Owner */}
+      {!collapsed && userRole === 'owner' && branches.length > 0 && (
+        <div className="border-b border-slate-700 px-4 py-3">
+          <label className="mb-2 block text-xs font-medium text-slate-400">
+            Pilih Cabang
+          </label>
+          <BranchSelector
+            branches={branches}
+            currentBranchId={currentBranchId}
+          />
         </div>
       )}
 

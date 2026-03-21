@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import {
   DollarSign,
   ShoppingBag,
@@ -69,6 +70,8 @@ export default function OwnerDashboard({
   topServices,
   recentOrders,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -221,47 +224,44 @@ export default function OwnerDashboard({
                 Revenue 7 Hari Terakhir
               </h2>
               <div className="h-80 min-h-80">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  minWidth={300}
-                  minHeight={320}
-                >
-                  <LineChart
-                    data={revenueData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" stroke="#64748b" />
-                    <YAxis
-                      stroke="#64748b"
-                      width={80}
-                      tickFormatter={(value) => {
-                        if (value >= 1000000) {
-                          return `Rp${(value / 1000000).toFixed(1)}Jt`;
-                        }
-                        if (value >= 1000) {
-                          return `Rp${(value / 1000).toFixed(0)}K`;
-                        }
-                        return `Rp${value}`;
-                      }}
-                    />
-                    <Tooltip
-                      formatter={(value) => formatCurrency(value as number)}
-                      labelStyle={{ color: '#1e293b' }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#4f46e5"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Revenue"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={revenueData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="name" stroke="#64748b" />
+                      <YAxis
+                        stroke="#64748b"
+                        width={80}
+                        tickFormatter={(value) => {
+                          if (value >= 1000000) {
+                            return `Rp${(value / 1000000).toFixed(1)}Jt`;
+                          }
+                          if (value >= 1000) {
+                            return `Rp${(value / 1000).toFixed(0)}K`;
+                          }
+                          return `Rp${value}`;
+                        }}
+                      />
+                      <Tooltip
+                        formatter={(value) => formatCurrency(value as number)}
+                        labelStyle={{ color: '#1e293b' }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#4f46e5"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Revenue"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -272,37 +272,34 @@ export default function OwnerDashboard({
               </h2>
               <div className="h-80 min-h-80">
                 {topServices.length > 0 ? (
-                  <ResponsiveContainer
-                    width="100%"
-                    height="100%"
-                    minWidth={300}
-                    minHeight={320}
-                  >
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) =>
-                          `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                        }
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => formatCurrency(value as number)}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  mounted && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => formatCurrency(value as number)}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )
                 ) : (
                   <div className="flex h-full items-center justify-center text-slate-400">
                     <Package className="h-12 w-12 opacity-20" />
