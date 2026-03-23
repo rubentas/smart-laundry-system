@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import PromoInput from '@/components/promo-input';
 
 interface Customer {
   id: number;
@@ -38,6 +39,10 @@ interface Props {
 export default function OrderCreate({ customers, services }: Props) {
   const [searchCustomer, setSearchCustomer] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
 
   const { data, setData, processing, errors } = useForm({
     customer_id: '',
@@ -115,10 +120,17 @@ export default function OrderCreate({ customers, services }: Props) {
     }, 0);
   };
 
+  const calculateDiscount = () => {
+    return appliedPromo?.discount || 0;
+  };
+
+  const calculateGrandTotal = () => {
+    return calculateSubtotal() - calculateDiscount();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Format items before submit
     const formattedItems = data.items.map((item) => ({
       service_id: item.service_id,
       quantity: parseFloat(item.quantity),
@@ -130,6 +142,7 @@ export default function OrderCreate({ customers, services }: Props) {
       items: formattedItems,
       notes: data.notes,
       pickup_date: data.pickup_date,
+      promo_code: appliedPromo?.code,
     });
   };
 
@@ -436,7 +449,7 @@ export default function OrderCreate({ customers, services }: Props) {
                   </div>
                 </div>
 
-                {/* Summary */}
+                {/* Ringkasan Order */}
                 <div className="border-t border-slate-200 pt-4">
                   <h3 className="mb-4 text-lg font-semibold text-slate-900">
                     Ringkasan Order
@@ -455,10 +468,30 @@ export default function OrderCreate({ customers, services }: Props) {
                         {calculateTotalWeight().toFixed(2)} kg
                       </span>
                     </div>
+
+                    {/* Promo Input */}
+                    <div className="pt-2">
+                      <PromoInput
+                        subtotal={calculateSubtotal()}
+                        onApplied={(promo) => {
+                          setAppliedPromo(promo);
+                        }}
+                      />
+                    </div>
+
+                    {appliedPromo && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Diskon ({appliedPromo.code})</span>
+                        <span>
+                          - Rp {appliedPromo.discount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold">
                       <span className="text-slate-800">Grand Total:</span>
                       <span className="text-indigo-600">
-                        Rp {calculateSubtotal().toLocaleString()}
+                        Rp {calculateGrandTotal().toLocaleString()}
                       </span>
                     </div>
                   </div>
