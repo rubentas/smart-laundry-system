@@ -128,6 +128,18 @@
     Route::get('error', [PaymentController::class, 'error'])->name('error');
   });
 
+  Route::get('/test-wa', function () {
+    $whatsapp = new \App\Services\WhatsAppService();
+    $order = \App\Models\Order::first();
+    
+    if ($order) {
+        $result = $whatsapp->sendOrderStatusUpdate($order, 'ready_pickup');
+        return response()->json(['success' => $result]);
+    }
+    
+    return response()->json(['error' => 'No order found']);
+})->middleware(['auth', 'role:owner']);
+
   /*
   |--------------------------------------------------------------------------
   | Settings Routes 

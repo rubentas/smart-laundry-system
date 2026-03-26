@@ -1,6 +1,4 @@
 import { router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { useState } from 'react';
 import {
   Settings2,
   Building2,
@@ -13,8 +11,9 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 
-// DEFINISI TYPE
 type SettingsGroup = Record<string, any>;
 
 interface SettingsProps {
@@ -247,6 +246,86 @@ export default function BusinessSettings({ settings }: SettingsProps) {
                           />
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Settings */}
+                  <div className="border-t border-slate-200 pt-6">
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+                      <Bell className="h-5 w-5 text-indigo-600" />
+                      Pengaturan WhatsApp
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+                        <div>
+                          <h4 className="font-medium text-slate-900">
+                            Aktifkan WhatsApp
+                          </h4>
+                          <p className="text-sm text-slate-500">
+                            Kirim notifikasi ke pelanggan via WhatsApp
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChange(
+                              'general',
+                              'whatsapp_enabled',
+                              !formData.general.whatsapp_enabled,
+                            )
+                          }
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.general.whatsapp_enabled
+                              ? 'bg-indigo-600'
+                              : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              formData.general.whatsapp_enabled
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {formData.general.whatsapp_enabled && (
+                        <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+                          <div>
+                            <h4 className="font-medium text-slate-900">
+                              Auto Kirim Status
+                            </h4>
+                            <p className="text-sm text-slate-500">
+                              Kirim otomatis saat status order berubah
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange(
+                                'general',
+                                'whatsapp_auto_send',
+                                !formData.general.whatsapp_auto_send,
+                              )
+                            }
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              formData.general.whatsapp_auto_send
+                                ? 'bg-indigo-600'
+                                : 'bg-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                formData.general.whatsapp_auto_send
+                                  ? 'translate-x-6'
+                                  : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

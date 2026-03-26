@@ -44,5 +44,10 @@ return [
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
+    'fonnte' => [
+    'token' => env('FONNTE_TOKEN'),
+    'sender' => env('FONNTE_SENDER'),
+    'production' => env('FONNTE_PRODUCTION', false),
+],
 
 ];

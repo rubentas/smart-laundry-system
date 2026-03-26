@@ -57,7 +57,7 @@ export default function PromoInput({
         })
         .finally(() => setLoading(false));
     }
-  }; // <-- HAPUS SATU KURUNG INI
+  }; 
 
   if (currentPromo) {
     return (

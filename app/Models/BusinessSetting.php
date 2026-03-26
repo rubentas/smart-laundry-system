@@ -58,4 +58,13 @@ class BusinessSetting extends Model
       ]
     );
   }
+
+  public static function getWhatsAppConfig()
+{
+    return [
+        'enabled' => self::get('whatsapp_enabled', false),
+        'auto_send' => self::get('whatsapp_auto_send', true),
+        'status_updates' => self::get('whatsapp_status_updates', true),
+    ];
+}
 }
