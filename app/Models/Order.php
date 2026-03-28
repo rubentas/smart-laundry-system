@@ -31,6 +31,18 @@ class Order extends Model
     'promo_id',
     'promo_code',
     'promo_discount',
+    'need_delivery',
+    'delivery_type',
+    'pickup_address',
+    'delivery_address',
+    'pickup_scheduled_at',
+    'delivery_scheduled_at',
+    'pickup_completed_at',
+    'delivery_completed_at',
+    'courier_id',
+    'delivery_status',
+    'delivery_fee',
+    'delivery_notes',
   ];
 
   protected $casts = [
@@ -43,6 +55,12 @@ class Order extends Model
     'tax' => 'decimal:2',
     'grand_total' => 'decimal:2',
     'promo_discount' => 'decimal:2',
+    'need_delivery' => 'boolean',
+    'pickup_scheduled_at' => 'datetime',
+    'delivery_scheduled_at' => 'datetime',
+    'pickup_completed_at' => 'datetime',
+    'delivery_completed_at' => 'datetime',
+    'delivery_fee' => 'decimal:2',
   ];
 
   /**
@@ -94,5 +112,10 @@ class Order extends Model
   public function promo()
   {
     return $this->belongsTo(Promo::class);
+  }
+
+  public function courier()
+  {
+    return $this->belongsTo(Courier::class);
   }
 }

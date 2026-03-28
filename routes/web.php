@@ -4,6 +4,7 @@
   use App\Http\Controllers\BranchController;
   use App\Http\Controllers\BranchSessionController;
   use App\Http\Controllers\BusinessSettingController;
+  use App\Http\Controllers\CourierController;
   use App\Http\Controllers\CustomerController;
   use App\Http\Controllers\DashboardController;
   use App\Http\Controllers\OrderController;
@@ -116,6 +117,12 @@
       Route::get('/promo/code/generate', [PromoController::class, 'generateCode'])->name('promo.generate-code');
     });
 
+  // Courier routes
+  Route::resource('couriers', CourierController::class);
+  Route::post('couriers/{courier}/update-status', [CourierController::class, 'updateStatus'])->name('couriers.update-status');
+  Route::post('orders/{order}/assign-courier', [CourierController::class, 'assignOrder'])->name('orders.assign-courier');
+  Route::post('orders/{order}/update-delivery', [CourierController::class, 'updateDeliveryStatus'])->name('orders.update-delivery');
+
   /*
   |--------------------------------------------------------------------------
   | Public Payment Callbacks 
@@ -131,14 +138,14 @@
   Route::get('/test-wa', function () {
     $whatsapp = new \App\Services\WhatsAppService();
     $order = \App\Models\Order::first();
-    
+
     if ($order) {
-        $result = $whatsapp->sendOrderStatusUpdate($order, 'ready_pickup');
-        return response()->json(['success' => $result]);
+      $result = $whatsapp->sendOrderStatusUpdate($order, 'ready_pickup');
+      return response()->json(['success' => $result]);
     }
-    
+
     return response()->json(['error' => 'No order found']);
-})->middleware(['auth', 'role:owner']);
+  })->middleware(['auth', 'role:owner']);
 
   /*
   |--------------------------------------------------------------------------

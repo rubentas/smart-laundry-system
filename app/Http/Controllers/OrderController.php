@@ -10,6 +10,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\Courier;
 
 class OrderController extends Controller
 {
@@ -69,6 +70,7 @@ class OrderController extends Controller
   public function create()
   {
     $user = auth()->user();
+    $couriers = Courier::available()->get(['id', 'name', 'phone']);
 
     // Get services based on branch
     if ($user->hasRole('owner') && session('selected_branch_id')) {
@@ -91,9 +93,10 @@ class OrderController extends Controller
     return Inertia::render('orders/create', [
       'customers' => $customers,
       'services' => $services,
+      'couriers' => $couriers,
     ]);
   }
-
+eb
   public function store(Request $request)
   {
     $validated = $request->validate([
@@ -198,6 +201,15 @@ class OrderController extends Controller
         'is_paid' => false,
         'promo_id' => $promoId,
         'promo_code' => $promoCode,
+        'need_delivery' => $request->boolean('need_delivery', false),
+        'delivery_type' => $request->delivery_type,
+        'pickup_address' => $request->pickup_address,
+        'delivery_address' => $request->delivery_address,
+        'pickup_scheduled_at' => $request->pickup_scheduled_at,
+        'delivery_scheduled_at' => $request->delivery_scheduled_at,
+        'delivery_fee' => $request->delivery_fee ?? 0,
+        'delivery_notes' => $request->delivery_notes,
+        'delivery_status' => $request->need_delivery ? 'pending' : null,
       ]);
 
       // Create order items

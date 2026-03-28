@@ -10,10 +10,11 @@ import {
   Calendar,
   Search,
   X,
+  Truck,
 } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 import PromoInput from '@/components/promo-input';
+import AppLayout from '@/layouts/app-layout';
 
 interface Customer {
   id: number;
@@ -44,6 +45,12 @@ export default function OrderCreate({ customers, services }: Props) {
     discount: number;
   } | null>(null);
 
+  // Tambah state untuk delivery
+  const [needDelivery, setNeedDelivery] = useState(false);
+  const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>(
+    'pickup',
+  );
+
   const { data, setData, processing, errors } = useForm({
     customer_id: '',
     items: [] as Array<{
@@ -54,6 +61,12 @@ export default function OrderCreate({ customers, services }: Props) {
     }>,
     notes: '',
     pickup_date: '',
+    // Tambah field untuk delivery
+    pickup_address: '',
+    delivery_address: '',
+    delivery_scheduled_at: '',
+    delivery_fee: '',
+    delivery_notes: '',
   });
 
   const filteredCustomers = customers.filter(
@@ -124,8 +137,16 @@ export default function OrderCreate({ customers, services }: Props) {
     return appliedPromo?.discount || 0;
   };
 
+  const calculateDeliveryFee = () => {
+    return parseFloat(data.delivery_fee) || 0;
+  };
+
   const calculateGrandTotal = () => {
-    return calculateSubtotal() - calculateDiscount();
+    let total = calculateSubtotal() - calculateDiscount();
+    if (needDelivery) {
+      total += calculateDeliveryFee();
+    }
+    return total;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -137,13 +158,30 @@ export default function OrderCreate({ customers, services }: Props) {
       notes: item.notes,
     }));
 
-    router.post('/owner/orders', {
+    const formData: any = {
       customer_id: data.customer_id,
       items: formattedItems,
       notes: data.notes,
       pickup_date: data.pickup_date,
       promo_code: appliedPromo?.code,
-    });
+    };
+
+    // Tambah data delivery jika diperlukan
+    if (needDelivery) {
+      formData.need_delivery = true;
+      formData.delivery_type = deliveryType;
+      formData.delivery_fee = calculateDeliveryFee();
+      formData.delivery_notes = data.delivery_notes;
+      formData.delivery_scheduled_at = data.delivery_scheduled_at;
+
+      if (deliveryType === 'pickup') {
+        formData.pickup_address = data.pickup_address;
+      } else {
+        formData.delivery_address = data.delivery_address;
+      }
+    }
+
+    router.post('/owner/orders', formData);
   };
 
   const selectedCustomer = customers.find(
@@ -449,6 +487,132 @@ export default function OrderCreate({ customers, services }: Props) {
                   </div>
                 </div>
 
+                {/* Delivery Section - TAMBAHKAN DI SINI */}
+                <div className="border-t border-slate-200 pt-4">
+                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+                    <Truck className="h-5 w-5 text-indigo-600" />
+                    Layanan Antar Jemput
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={needDelivery}
+                        onChange={(e) => setNeedDelivery(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      <label className="text-sm font-medium text-slate-700">
+                        Butuh layanan antar jemput
+                      </label>
+                    </div>
+
+                    {needDelivery && (
+                      <div className="space-y-4 rounded-lg bg-slate-50 p-4">
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              value="pickup"
+                              checked={deliveryType === 'pickup'}
+                              onChange={() => setDeliveryType('pickup')}
+                            />
+                            <span className="text-sm">Ambil di Rumah</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              value="delivery"
+                              checked={deliveryType === 'delivery'}
+                              onChange={() => setDeliveryType('delivery')}
+                            />
+                            <span className="text-sm">Antar ke Rumah</span>
+                          </label>
+                        </div>
+
+                        {deliveryType === 'pickup' && (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-slate-700">
+                              Alamat Jemput
+                            </label>
+                            <textarea
+                              value={data.pickup_address}
+                              onChange={(e) =>
+                                setData('pickup_address', e.target.value)
+                              }
+                              rows={2}
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                              placeholder="Jl. Contoh No. 123, RT/RW, Kelurahan, Kecamatan"
+                            />
+                          </div>
+                        )}
+
+                        {deliveryType === 'delivery' && (
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-slate-700">
+                              Alamat Antar
+                            </label>
+                            <textarea
+                              value={data.delivery_address}
+                              onChange={(e) =>
+                                setData('delivery_address', e.target.value)
+                              }
+                              rows={2}
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                              placeholder="Jl. Contoh No. 123, RT/RW, Kelurahan, Kecamatan"
+                            />
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-slate-700">
+                              Tanggal Jemput/Antar
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={data.delivery_scheduled_at}
+                              onChange={(e) =>
+                                setData('delivery_scheduled_at', e.target.value)
+                              }
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-slate-700">
+                              Biaya Pengiriman
+                            </label>
+                            <input
+                              type="number"
+                              value={data.delivery_fee}
+                              onChange={(e) =>
+                                setData('delivery_fee', e.target.value)
+                              }
+                              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            Catatan Pengiriman
+                          </label>
+                          <input
+                            type="text"
+                            value={data.delivery_notes}
+                            onChange={(e) =>
+                              setData('delivery_notes', e.target.value)
+                            }
+                            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm"
+                            placeholder="Contoh: Rumah warna merah, samping warung"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Ringkasan Order */}
                 <div className="border-t border-slate-200 pt-4">
                   <h3 className="mb-4 text-lg font-semibold text-slate-900">
@@ -484,6 +648,17 @@ export default function OrderCreate({ customers, services }: Props) {
                         <span>Diskon ({appliedPromo.code})</span>
                         <span>
                           - Rp {appliedPromo.discount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {needDelivery && calculateDeliveryFee() > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">
+                          Biaya Pengiriman:
+                        </span>
+                        <span className="font-medium text-slate-900">
+                          Rp {calculateDeliveryFee().toLocaleString()}
                         </span>
                       </div>
                     )}
