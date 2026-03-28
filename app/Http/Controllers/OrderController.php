@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Promo;
@@ -10,7 +11,6 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use App\Models\Courier;
 
 class OrderController extends Controller
 {
@@ -96,7 +96,7 @@ class OrderController extends Controller
       'couriers' => $couriers,
     ]);
   }
-eb
+
   public function store(Request $request)
   {
     $validated = $request->validate([
@@ -108,6 +108,14 @@ eb
       'notes' => 'nullable|string',
       'pickup_date' => 'nullable|date',
       'promo_code' => 'nullable|string|exists:promos,code',
+      'need_delivery' => 'boolean',
+      'delivery_type' => 'nullable|in:pickup,delivery',
+      'pickup_address' => 'nullable|string',
+      'delivery_address' => 'nullable|string',
+      'pickup_scheduled_at' => 'nullable|date',
+      'delivery_scheduled_at' => 'nullable|date',
+      'delivery_fee' => 'nullable|numeric',
+      'delivery_notes' => 'nullable|string',
     ]);
 
     try {
@@ -230,6 +238,16 @@ eb
       $customer->increment('total_spent', $grandTotal);
       $customer->update(['last_order_date' => now()]);
 
+      // ADD LOYALTY POINTS 
+      if ($customer) {
+        $benefits = $customer->getTierBenefits();
+        $pointsEarned = floor($grandTotal / 10000) * $benefits['points_multiplier'];
+
+        if ($pointsEarned > 0) {
+          $customer->addPoints($pointsEarned, $order->id, "Poin dari order {$order->order_number}");
+        }
+      }
+
       DB::commit();
 
       return redirect()->route('owner.orders.show', $order->id)
@@ -243,7 +261,7 @@ eb
 
   public function show(Order $order)
   {
-    $order->load(['customer', 'branch', 'cashier', 'items.service', 'statusHistories.user']);
+    $order->load(['customer', 'branch', 'cashier', 'items.service', 'statusHistories.user', 'courier']);
 
     return Inertia::render('orders/show', [
       'order' => $order,
@@ -302,7 +320,6 @@ eb
     return back()->with('error', 'Gagal mengirim notifikasi');
   }
 
-  // Method untuk apply promo
   public function applyPromo(Request $request, Order $order)
   {
     $request->validate([
@@ -321,25 +338,24 @@ eb
       return response()->json(['error' => 'Kuota promo sudah habis'], 422);
     }
 
-    if ($order->grand_total < $promo->min_purchase) {
+    if ($order->subtotal < $promo->min_purchase) {
       return response()->json(['error' => "Minimal belanja Rp " . number_format($promo->min_purchase)], 422);
     }
 
     // Hitung diskon
-    $discount = 0;
     if ($promo->type === 'percentage') {
-      $discount = $order->grand_total * ($promo->value / 100);
+      $discount = $order->subtotal * ($promo->value / 100);
     } else {
       $discount = $promo->value;
     }
 
-    // Batasi diskon tidak melebihi total
-    $discount = min($discount, $order->grand_total);
+    $discount = min($discount, $order->subtotal);
+    $grandTotal = $order->subtotal - $discount;
 
     // Update order
     $order->update([
       'discount' => $discount,
-      'grand_total' => $order->grand_total - $discount,
+      'grand_total' => $grandTotal,
       'promo_id' => $promo->id,
       'promo_code' => $promo->code
     ]);
@@ -350,7 +366,7 @@ eb
     return response()->json([
       'success' => true,
       'discount' => $discount,
-      'grand_total' => $order->grand_total,
+      'grand_total' => $grandTotal,
       'promo' => $promo
     ]);
   }
