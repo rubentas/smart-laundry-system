@@ -11,8 +11,8 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 import { useState } from 'react';
+import AppLayout from '@/layouts/app-layout';
 
 type SettingsGroup = Record<string, any>;
 
