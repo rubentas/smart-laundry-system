@@ -1,7 +1,7 @@
 import { Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Plus, Edit, Trash2, Truck, Phone, Car, MapPin } from 'lucide-react';
+import { Plus, Truck, Phone, Car } from 'lucide-react';
 import { useState } from 'react';
+import AppLayout from '@/layouts/app-layout';
 
 interface Courier {
   id: number;
@@ -59,7 +59,7 @@ export default function CouriersIndex({ couriers }: Props) {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
