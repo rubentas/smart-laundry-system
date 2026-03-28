@@ -15,6 +15,10 @@ import {
   History,
   CreditCard,
   AlertCircle,
+  Truck,
+  MapPin,
+  Phone,
+  Car,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -48,6 +52,13 @@ interface StatusHistory {
   user: {
     name: string;
   } | null;
+}
+
+interface Courier {
+  id: number;
+  name: string;
+  phone: string;
+  license_plate: string | null;
 }
 
 interface Order {
@@ -88,16 +99,104 @@ interface Order {
   payment_method: string | null;
   items: OrderItem[];
   status_histories: StatusHistory[];
+  // Delivery fields
+  need_delivery?: boolean;
+  delivery_type?: 'pickup' | 'delivery';
+  pickup_address?: string;
+  delivery_address?: string;
+  delivery_scheduled_at?: string;
+  delivery_fee?: number | string;
+  delivery_notes?: string | null;
+  courier?: Courier | null;
+  delivery_status?: string;
 }
 
 interface Props {
   order: Order;
+  couriers?: Courier[];
 }
 
-export default function OrderShow({ order }: Props) {
+// Helper function to get delivery step index
+const getDeliveryStep = (status?: string) => {
+  const steps = [
+    'pending',
+    'waiting_pickup',
+    'picked_up',
+    'on_delivery',
+    'delivered',
+  ];
+  return steps.indexOf(status || 'pending');
+};
+
+// Assign Courier Modal Component
+function AssignCourierModal({
+  order,
+  couriers = [],
+  onClose,
+  onAssign,
+}: {
+  order: Order;
+  couriers: Courier[];
+  onClose: () => void;
+  onAssign: (courierId: number) => void;
+}) {
+  const [selectedCourierId, setSelectedCourierId] = useState<number | null>(
+    null,
+  );
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign Kurir</DialogTitle>
+          <DialogDescription>
+            Pilih kurir untuk order #{order.order_number}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Pilih Kurir
+            </label>
+            <select
+              value={selectedCourierId || ''}
+              onChange={(e) => setSelectedCourierId(parseInt(e.target.value))}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
+            >
+              <option value="">Pilih kurir...</option>
+              {couriers.map((courier) => (
+                <option key={courier.id} value={courier.id}>
+                  {courier.name} - {courier.phone}{' '}
+                  {courier.license_plate ? `(${courier.license_plate})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Batal
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => selectedCourierId && onAssign(selectedCourierId)}
+            disabled={!selectedCourierId}
+          >
+            Assign Kurir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default function OrderShow({ order, couriers = [] }: Props) {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(order.status);
   const [statusNotes, setStatusNotes] = useState('');
+  const [showAssignCourier, setShowAssignCourier] = useState(false);
 
   const toNumber = (value: unknown): number => {
     if (typeof value === 'number') {
@@ -382,6 +481,20 @@ export default function OrderShow({ order }: Props) {
                           </td>
                         </tr>
                       )}
+                      {order.need_delivery &&
+                        toNumber(order.delivery_fee) > 0 && (
+                          <tr>
+                            <td
+                              colSpan={3}
+                              className="pt-2 text-right font-medium text-slate-600"
+                            >
+                              Biaya Pengiriman
+                            </td>
+                            <td className="pt-2 text-right font-medium text-slate-900">
+                              {formatCurrency(toNumber(order.delivery_fee))}
+                            </td>
+                          </tr>
+                        )}
                       <tr>
                         <td
                           colSpan={3}
@@ -579,6 +692,188 @@ export default function OrderShow({ order }: Props) {
                 </div>
               </div>
 
+              {/* Delivery Section */}
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                    <Truck className="h-5 w-5 text-indigo-600" />
+                    Informasi Pengiriman
+                  </h3>
+                </div>
+                <div className="p-6">
+                  {order.need_delivery ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="rounded-lg bg-slate-50 p-4">
+                          <div className="mb-2 flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-indigo-600" />
+                            <span className="font-medium">
+                              Alamat{' '}
+                              {order.delivery_type === 'pickup'
+                                ? 'Jemput'
+                                : 'Antar'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700">
+                            {order.delivery_type === 'pickup'
+                              ? order.pickup_address
+                              : order.delivery_address}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg bg-slate-50 p-4">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-indigo-600" />
+                            <span className="font-medium">Jadwal</span>
+                          </div>
+                          <p className="text-sm text-slate-700">
+                            {order.delivery_scheduled_at
+                              ? new Date(
+                                  order.delivery_scheduled_at,
+                                ).toLocaleString()
+                              : 'Belum dijadwalkan'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Courier Info */}
+                      <div className="rounded-lg border border-slate-200 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-indigo-600" />
+                            <span className="font-medium">Kurir</span>
+                          </div>
+                          {!order.courier && (
+                            <button
+                              onClick={() => setShowAssignCourier(true)}
+                              className="text-sm text-indigo-600 hover:text-indigo-800"
+                            >
+                              Assign Kurir
+                            </button>
+                          )}
+                        </div>
+
+                        {order.courier ? (
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-indigo-100 p-2">
+                              <Truck className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {order.courier.name}
+                              </p>
+                              <div className="mt-1 flex items-center gap-3">
+                                <span className="flex items-center gap-1 text-xs text-slate-500">
+                                  <Phone className="h-3 w-3" />{' '}
+                                  {order.courier.phone}
+                                </span>
+                                {order.courier.license_plate && (
+                                  <span className="flex items-center gap-1 text-xs text-slate-500">
+                                    <Car className="h-3 w-3" />{' '}
+                                    {order.courier.license_plate}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="ml-auto text-sm font-medium">
+                              {order.delivery_status === 'pending' &&
+                                'Menunggu Kurir'}
+                              {order.delivery_status === 'waiting_pickup' &&
+                                'Menunggu Diambil'}
+                              {order.delivery_status === 'picked_up' &&
+                                'Sudah Diambil'}
+                              {order.delivery_status === 'on_delivery' &&
+                                'Dalam Perjalanan'}
+                              {order.delivery_status === 'delivered' &&
+                                'Telah Dikirim'}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-500">
+                            Belum ada kurir ditugaskan
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Delivery Status Timeline */}
+                      {order.delivery_status &&
+                        order.delivery_status !== 'pending' && (
+                          <div className="mt-4">
+                            <h4 className="mb-3 text-sm font-medium text-slate-700">
+                              Status Pengiriman
+                            </h4>
+                            <div className="relative">
+                              <div className="absolute top-0 bottom-0 left-4 w-0.5 bg-slate-200"></div>
+                              {[
+                                {
+                                  status: 'waiting_pickup',
+                                  label: 'Menunggu Diambil',
+                                  icon: Clock,
+                                },
+                                {
+                                  status: 'picked_up',
+                                  label: 'Sudah Diambil',
+                                  icon: Truck,
+                                },
+                                {
+                                  status: 'on_delivery',
+                                  label: 'Dalam Perjalanan',
+                                  icon: Car,
+                                },
+                                {
+                                  status: 'delivered',
+                                  label: 'Telah Dikirim',
+                                  icon: MapPin,
+                                },
+                              ].map((step, idx) => {
+                                const isCompleted =
+                                  getDeliveryStep(order.delivery_status) >=
+                                  idx + 1;
+                                const Icon = step.icon;
+                                return (
+                                  <div
+                                    key={step.status}
+                                    className="relative mb-6 pl-10 last:mb-0"
+                                  >
+                                    <div
+                                      className={`absolute top-0 left-2.5 h-3 w-3 rounded-full ${
+                                        isCompleted
+                                          ? 'bg-indigo-600'
+                                          : 'bg-slate-300'
+                                      }`}
+                                    ></div>
+                                    <div
+                                      className={`text-sm ${isCompleted ? 'text-slate-900' : 'text-slate-500'}`}
+                                    >
+                                      <Icon className="mr-2 inline h-4 w-4" />
+                                      {step.label}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                      {order.delivery_notes && (
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-xs font-medium text-slate-500">
+                            Catatan Pengiriman
+                          </p>
+                          <p className="text-sm text-slate-700">
+                            {order.delivery_notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      Tidak menggunakan layanan antar jemput
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* Branch Info */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                 <div className="border-b border-slate-200 bg-slate-50/50 px-6 py-4">
@@ -658,6 +953,21 @@ export default function OrderShow({ order }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Assign Courier Modal */}
+      {showAssignCourier && (
+        <AssignCourierModal
+          order={order}
+          couriers={couriers}
+          onClose={() => setShowAssignCourier(false)}
+          onAssign={(courierId) => {
+            router.post(`/owner/orders/${order.id}/assign-courier`, {
+              courier_id: courierId,
+            });
+            setShowAssignCourier(false);
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
