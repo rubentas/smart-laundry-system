@@ -16,7 +16,7 @@ import {
   BarChart3,
   LineChart,
 } from 'lucide-react';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -268,32 +268,35 @@ export default function AnalyticsIndex({
                 <LineChart className="h-5 w-5 text-indigo-600" />
                 <h3 className="font-semibold text-slate-900">Revenue Trend</h3>
               </div>
-              <Line
-                data={{
-                  labels: revenueData.labels,
-                  datasets: [
-                    {
-                      label: 'Revenue',
-                      data: revenueData.values,
-                      borderColor: 'rgb(79, 70, 229)',
-                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                      fill: true,
-                      tension: 0.4,
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    tooltip: {
-                      callbacks: {
-                        label: (ctx) =>
-                          `Rp ${(ctx.raw as number).toLocaleString()}`,
+              <div className="relative h-64">
+                <Line
+                  data={{
+                    labels: revenueData.labels,
+                    datasets: [
+                      {
+                        label: 'Revenue',
+                        data: revenueData.values,
+                        borderColor: 'rgb(79, 70, 229)',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) =>
+                            `Rp ${(ctx.raw as number).toLocaleString()}`,
+                        },
                       },
                     },
-                  },
-                }}
-              />
+                  }}
+                />
+              </div>
             </div>
 
             {/* Order Status Pie Chart */}
@@ -304,28 +307,32 @@ export default function AnalyticsIndex({
                   Order Status Distribution
                 </h3>
               </div>
-              <Pie
-                data={{
-                  labels: Object.keys(orderStats.status_breakdown).map(
-                    (s) => statusLabels[s] || s,
-                  ),
-                  datasets: [
-                    {
-                      data: Object.values(orderStats.status_breakdown),
-                      backgroundColor: Object.keys(orderStats.status_breakdown)
-                        .map(
-                          (s) =>
-                            statusColors[s]?.replace(
-                              'bg-',
-                              'rgba(59, 130, 246, ',
-                            ) || 'rgba(156, 163, 175, ',
+              <div className="relative h-64">
+                <Pie
+                  data={{
+                    labels: Object.keys(orderStats.status_breakdown).map(
+                      (s) => statusLabels[s] || s,
+                    ),
+                    datasets: [
+                      {
+                        data: Object.values(orderStats.status_breakdown),
+                        backgroundColor: Object.keys(
+                          orderStats.status_breakdown,
                         )
-                        .map((c) => c + '0.8)'),
-                    },
-                  ],
-                }}
-                options={{ responsive: true }}
-              />
+                          .map(
+                            (s) =>
+                              statusColors[s]?.replace(
+                                'bg-',
+                                'rgba(59, 130, 246, ',
+                              ) || 'rgba(156, 163, 175, ',
+                          )
+                          .map((c) => c + '0.8)'),
+                      },
+                    ],
+                  }}
+                  options={{ responsive: true, maintainAspectRatio: false }}
+                />
+              </div>
             </div>
           </div>
 
