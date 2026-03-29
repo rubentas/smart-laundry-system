@@ -17,6 +17,8 @@ import {
   HelpCircle,
   Brain,
   Settings2,
+  Truck,
+  Award,
 } from 'lucide-react';
 import { useState } from 'react';
 import BranchSelector from '@/components/branch-selector';
@@ -62,6 +64,11 @@ export function AppSidebar() {
         icon: LayoutDashboard,
       },
       {
+        title: 'Analytics',
+        href: '/owner/analytics',
+        icon: LineChart,
+      },
+      {
         title: 'Cabang',
         href: '/owner/branches',
         icon: Building2,
@@ -90,6 +97,16 @@ export function AppSidebar() {
         title: 'Laporan',
         href: '/owner/reports',
         icon: BarChart3,
+      },
+      {
+        title: 'Kurir',
+        href: '/owner/couriers',
+        icon: Truck,
+      },
+      {
+        title: 'Loyalty',
+        href: '/owner/loyalty',
+        icon: Award,
       },
       {
         title: 'AI Insights',

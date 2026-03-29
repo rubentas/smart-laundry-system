@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchSessionController;
 use App\Http\Controllers\BusinessSettingController;
@@ -14,8 +15,11 @@ use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PromoValidationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
+use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -127,6 +131,8 @@ Route::middleware(['auth', 'role:owner'])
     Route::get('customers/{customer}/points', [LoyaltyController::class, 'customerPoints'])->name('customers.points');
     Route::post('customers/{customer}/redeem', [LoyaltyController::class, 'redeemReward'])->name('customers.redeem');
     Route::get('loyalty/rewards-available', [LoyaltyController::class, 'rewardsAvailable'])->name('loyalty.rewards');
+
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
   });
 
 /*
