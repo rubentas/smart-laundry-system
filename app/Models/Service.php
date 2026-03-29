@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Service extends Model
 {
+
+  use LogsActivity;
+
   protected $fillable = [
     'service_code',
     'name',

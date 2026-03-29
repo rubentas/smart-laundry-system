@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BranchController;
@@ -133,6 +134,10 @@ Route::middleware(['auth', 'role:owner'])
     Route::get('loyalty/rewards-available', [LoyaltyController::class, 'rewardsAvailable'])->name('loyalty.rewards');
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
+
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('activity-logs/{log}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+    Route::get('activity-logs/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
   });
 
 /*

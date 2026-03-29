@@ -7,7 +7,7 @@ import {
   Users,
   ShoppingBag,
   BarChart3,
-  Settings,
+  Activity,
   LogOut,
   ChevronRight,
   Store,
@@ -107,6 +107,11 @@ export function AppSidebar() {
         title: 'Loyalty',
         href: '/owner/loyalty',
         icon: Award,
+      },
+      {
+        title: 'Activity Logs',
+        href: '/owner/activity-logs',
+        icon: Activity,
       },
       {
         title: 'AI Insights',

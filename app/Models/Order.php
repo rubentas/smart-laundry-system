@@ -7,10 +7,12 @@ use App\Models\Traits\HasBranchScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Traits\LogsActivity;
 
 class Order extends Model
 {
   use HasBranchScope;
+  use LogsActivity;
 
   protected $fillable = [
     'order_number',

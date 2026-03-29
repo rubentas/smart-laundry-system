@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Customer extends Model
 {
+  use LogsActivity;
+
   protected $fillable = [
     'customer_code',
     'name',

@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Traits\LogsActivity;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -19,6 +20,7 @@ class User extends Authenticatable
    *
    * @var list<string>
    */
+  use LogsActivity;
   protected $fillable = [
     'name',
     'email',
