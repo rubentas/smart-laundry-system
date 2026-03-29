@@ -154,7 +154,7 @@ Route::prefix('payment')->name('payment.')->group(function () {
 
 Route::get('/test-wa', function () {
   $whatsapp = new \App\Services\WhatsAppService();
-  $order = \App\Models\Order::first();
+  $order = Order::first();
 
   if ($order) {
     $result = $whatsapp->sendOrderStatusUpdate($order, 'ready_pickup');

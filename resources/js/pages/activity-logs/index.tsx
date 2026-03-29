@@ -1,17 +1,7 @@
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import {
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Clock,
-  User,
-  Activity,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Search, Download, Eye, Clock, User, Activity } from 'lucide-react';
 
 interface Log {
   id: number;
