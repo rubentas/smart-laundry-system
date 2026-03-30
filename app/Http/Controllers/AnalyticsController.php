@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -12,77 +13,88 @@ class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        $range = $request->get('range', 'month'); // week, month, year
-
-        $revenueData = $this->getRevenueData($range);
-        $orderStats = $this->getOrderStats($range);
-        $topServices = $this->getTopServices($range);
-        $customerStats = $this->getCustomerStats($range);
-        $prediction = $this->getPrediction($range);
+        $range = $request->input('range', 'month');
 
         return Inertia::render('analytics/index', [
-            'revenueData' => $revenueData,
-            'orderStats' => $orderStats,
-            'topServices' => $topServices,
-            'customerStats' => $customerStats,
-            'prediction' => $prediction,
+            'revenueData' => $this->getRevenueData($range),
+            'orderStats' => $this->getOrderStats($range),
+            'topServices' => $this->getTopServices($range),
+            'customerStats' => $this->getCustomerStats($range),
+            'prediction' => $this->getPrediction($range),
             'range' => $range,
         ]);
     }
 
-    private function getRevenueData(string $range): array
+    public function adminIndex(Request $request)
+    {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        $branchId = $authUser->branch_id;
+        $range = $request->input('range', 'month');
+
+        return Inertia::render('admin/analytics/index', [
+            'revenueData' => $this->getRevenueData($range, $branchId),
+            'orderStats' => $this->getOrderStats($range, $branchId),
+            'topServices' => $this->getTopServices($range, $branchId),
+            'branchName' => $authUser->branch->name ?? 'Cabang',
+            'range' => $range,
+        ]);
+    }
+
+    private function getRevenueData(string $range, ?int $branchId = null): array
     {
         $dates = $this->getDateRange($range);
 
-        // Group by week/month/year at DB level — no PHP date loop
         $groupFormat = match ($range) {
-            'week' => '%Y-%m-%d',
-            'month' => '%Y-%m-%d',
             'year' => '%Y-%m',
             default => '%Y-%m-%d',
         };
 
         $labelFormat = match ($range) {
-            'week' => 'D',
-            'month' => 'd M',
             'year' => 'M Y',
             default => 'd M',
         };
 
-        $rows = Order::withoutGlobalScope(\App\Models\Scopes\BranchScope::class)
-            ->where('status', '!=', 'cancelled')
-            ->whereBetween('order_date', [$dates['start'], $dates['end']])
-            ->select(
-                DB::raw("DATE_FORMAT(order_date, '{$groupFormat}') as period"),
-                DB::raw('SUM(grand_total) as total')
-            )
+        $query = Order::where('status', '!=', 'cancelled')
+            ->whereBetween('order_date', [$dates['start'], $dates['end']]);
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        } else {
+            $query->withoutGlobalScope(\App\Models\Scopes\BranchScope::class);
+        }
+
+        $rows = $query->select(
+            DB::raw("DATE_FORMAT(order_date, '{$groupFormat}') as period"),
+            DB::raw('SUM(grand_total) as total')
+        )
             ->groupBy('period')
             ->orderBy('period')
             ->get();
 
-        $labels = $rows->map(fn ($r) => \Carbon\Carbon::parse($r->period)->format($labelFormat))->toArray();
-        $values = $rows->pluck('total')->map(fn ($v) => (float) $v)->toArray();
-
-        return ['labels' => $labels, 'values' => $values];
+        return [
+            'labels' => $rows->map(fn ($r) => \Carbon\Carbon::parse($r->period)->format($labelFormat))->toArray(),
+            'values' => $rows->pluck('total')->map(fn ($v) => (float) $v)->toArray(),
+        ];
     }
 
-    private function getOrderStats(string $range): array
+    private function getOrderStats(string $range, ?int $branchId = null): array
     {
         $dates = $this->getDateRange($range);
         $previousDates = $this->getPreviousDateRange($range);
 
-        $current = Order::withoutGlobalScope(\App\Models\Scopes\BranchScope::class)
-            ->whereBetween('order_date', [$dates['start'], $dates['end']])
-            ->selectRaw('COUNT(*) as total, AVG(grand_total) as avg_order, SUM(grand_total) as revenue')
-            ->first();
+        $baseQuery = fn () => Order::whereBetween('order_date', [$dates['start'], $dates['end']])
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when(! $branchId, fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\BranchScope::class));
 
-        $previous = Order::withoutGlobalScope(\App\Models\Scopes\BranchScope::class)
-            ->whereBetween('order_date', [$previousDates['start'], $previousDates['end']])
-            ->selectRaw('COUNT(*) as total, SUM(grand_total) as revenue')
-            ->first();
+        $prevQuery = fn () => Order::whereBetween('order_date', [$previousDates['start'], $previousDates['end']])
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when(! $branchId, fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\BranchScope::class));
 
-        $statusBreakdown = Order::withoutGlobalScope(\App\Models\Scopes\BranchScope::class)
-            ->whereBetween('order_date', [$dates['start'], $dates['end']])
+        $current = $baseQuery()->selectRaw('COUNT(*) as total, AVG(grand_total) as avg_order, SUM(grand_total) as revenue')->first();
+        $previous = $prevQuery()->selectRaw('COUNT(*) as total, SUM(grand_total) as revenue')->first();
+
+        $statusBreakdown = $baseQuery()
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->get()
@@ -98,7 +110,7 @@ class AnalyticsController extends Controller
         ];
     }
 
-    private function getTopServices($range)
+    private function getTopServices(string $range, ?int $branchId = null)
     {
         $dates = $this->getDateRange($range);
 
@@ -106,6 +118,7 @@ class AnalyticsController extends Controller
             ->join('services', 'order_items.service_id', '=', 'services.id')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->whereBetween('orders.order_date', [$dates['start'], $dates['end']])
+            ->when($branchId, fn ($q) => $q->where('orders.branch_id', $branchId))
             ->select(
                 'services.name',
                 DB::raw('COUNT(*) as total_orders'),
@@ -131,7 +144,6 @@ class AnalyticsController extends Controller
             ->having('order_count', '>', 1)
             ->count();
 
-        // Use join instead of whereHas to avoid N+1 and timeout
         $memberOrders = DB::table('orders')
             ->join('customers', 'orders.customer_id', '=', 'customers.id')
             ->whereBetween('orders.order_date', [$dates['start'], $dates['end']])
@@ -184,39 +196,30 @@ class AnalyticsController extends Controller
         $denominator = $n * $sumX2 - $sumX * $sumX;
         $slope = $denominator != 0 ? ($n * $sumXY - $sumX * $sumY) / $denominator : 0;
         $nextValue = end($y) + $slope * ($days / 7);
-
-        $trend = $slope > 0 ? 'up' : ($slope < 0 ? 'down' : 'stable');
         $avgY = $sumY > 0 ? $sumY / $n : 1;
 
         return [
             'next_month' => max(0, round($nextValue * 4)),
-            'trend' => $trend,
+            'trend' => $slope > 0 ? 'up' : ($slope < 0 ? 'down' : 'stable'),
             'slope_percentage' => round(($slope / $avgY) * 100, 1),
         ];
     }
 
-    private function getDateRange($range)
+    private function getDateRange(string $range): array
     {
         $end = now()->endOfDay();
 
-        switch ($range) {
-            case 'week':
-                $start = now()->startOfWeek();
-                break;
-            case 'month':
-                $start = now()->startOfMonth();
-                break;
-            case 'year':
-                $start = now()->startOfYear();
-                break;
-            default:
-                $start = now()->subDays(30)->startOfDay();
-        }
+        $start = match ($range) {
+            'week' => now()->startOfWeek(),
+            'month' => now()->startOfMonth(),
+            'year' => now()->startOfYear(),
+            default => now()->subDays(30)->startOfDay(),
+        };
 
         return ['start' => $start, 'end' => $end];
     }
 
-    private function getPreviousDateRange($range)
+    private function getPreviousDateRange(string $range): array
     {
         $current = $this->getDateRange($range);
         $days = $current['start']->diffInDays($current['end']);
@@ -229,7 +232,7 @@ class AnalyticsController extends Controller
         return ['start' => $start, 'end' => $end];
     }
 
-    private function calculateGrowth($previous, $current)
+    private function calculateGrowth(mixed $previous, mixed $current): float|int
     {
         if ($previous == 0) {
             return $current > 0 ? 100 : 0;
