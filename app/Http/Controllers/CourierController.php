@@ -69,4 +69,25 @@ class CourierController extends Controller
 
     return back()->with('success', 'Status pengiriman diperbarui');
   }
+
+  public function adminIndex(Request $request)
+  {
+    $branchId = auth()->user()->branch_id;
+
+    $query = Courier::withCount('orders');
+
+    $couriers = $query->latest()->paginate(10);
+
+    $stats = [
+      'total' => Courier::count(),
+      'available' => Courier::where('status', 'available')->count(),
+      'on_duty' => Courier::where('status', 'on_duty')->count(),
+      'offline' => Courier::where('status', 'offline')->count(),
+    ];
+
+    return Inertia::render('admin/couriers/index', [
+      'couriers' => $couriers,
+      'stats' => $stats,
+    ]);
+  }
 }

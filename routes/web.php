@@ -174,11 +174,11 @@ Route::middleware(['auth', 'role:branch_admin'])
     // Services
     Route::resource('services', ServiceController::class);
 
-    // Couriers
-    Route::get('couriers', [CourierController::class, 'index'])->name('couriers.index');
-    Route::post('orders/{order}/assign-courier', [CourierController::class, 'assignOrder'])->name('orders.assign-courier');
-    Route::post('orders/{order}/update-delivery', [CourierController::class, 'updateDeliveryStatus'])->name('orders.update-delivery');
-
+  // Couriers
+  Route::get('couriers', [CourierController::class, 'adminIndex'])->name('couriers.index');
+  Route::post('couriers/{courier}/update-status', [CourierController::class, 'updateStatus'])->name('couriers.update-status');
+  Route::post('orders/{order}/assign-courier', [CourierController::class, 'assignOrder'])->name('orders.assign-courier');
+  Route::post('orders/{order}/update-delivery', [CourierController::class, 'updateDeliveryStatus'])->name('orders.update-delivery');
     // Loyalty
     Route::get('customers/{customer}/points', [LoyaltyController::class, 'customerPoints'])->name('customers.points');
 
