@@ -20,6 +20,9 @@ import {
   Truck,
   Award,
   Database,
+  Ticket,
+  History,
+  User,
 } from 'lucide-react';
 import { useState } from 'react';
 import BranchSelector from '@/components/branch-selector';
@@ -59,71 +62,19 @@ export function AppSidebar() {
   // Menu definitions per role
   const menuConfig: MenuConfig = {
     owner: [
-      {
-        title: 'Dashboard',
-        href: '/owner/dashboard',
-        icon: LayoutDashboard,
-      },
-      {
-        title: 'Analytics',
-        href: '/owner/analytics',
-        icon: LineChart,
-      },
-      {
-        title: 'Cabang',
-        href: '/owner/branches',
-        icon: Building2,
-      },
-      {
-        title: 'Layanan',
-        href: '/owner/services',
-        icon: Package,
-      },
-      {
-        title: 'Pelanggan',
-        href: '/owner/customers',
-        icon: Users,
-      },
-      {
-        title: 'Transaksi',
-        href: '/owner/orders',
-        icon: ShoppingBag,
-      },
-      {
-        title: 'Pembayaran',
-        href: '/owner/payments',
-        icon: CreditCard,
-      },
-      {
-        title: 'Laporan',
-        href: '/owner/reports',
-        icon: BarChart3,
-      },
-      {
-        title: 'Kurir',
-        href: '/owner/couriers',
-        icon: Truck,
-      },
-      {
-        title: 'Loyalty',
-        href: '/owner/loyalty',
-        icon: Award,
-      },
-      {
-        title: 'Activity Logs',
-        href: '/owner/activity-logs',
-        icon: Activity,
-      },
-      {
-        title: 'AI Insights',
-        href: '/owner/ai/insights',
-        icon: Brain,
-      },
-      {
-        title: 'Backup',
-        href: '/owner/backups',
-        icon: Database,
-      },
+      { title: 'Dashboard', href: '/owner/dashboard', icon: LayoutDashboard },
+      { title: 'Analytics', href: '/owner/analytics', icon: LineChart },
+      { title: 'Cabang', href: '/owner/branches', icon: Building2 },
+      { title: 'Layanan', href: '/owner/services', icon: Package },
+      { title: 'Pelanggan', href: '/owner/customers', icon: Users },
+      { title: 'Transaksi', href: '/owner/orders', icon: ShoppingBag },
+      { title: 'Pembayaran', href: '/owner/payments', icon: CreditCard },
+      { title: 'Laporan', href: '/owner/reports', icon: BarChart3 },
+      { title: 'Kurir', href: '/owner/couriers', icon: Truck },
+      { title: 'Loyalty', href: '/owner/loyalty', icon: Award },
+      { title: 'Activity Logs', href: '/owner/activity-logs', icon: Activity },
+      { title: 'AI Insights', href: '/owner/ai/insights', icon: Brain },
+      { title: 'Backup', href: '/owner/backups', icon: Database },
       {
         title: 'Pengaturan',
         href: '/owner/business/settings',
@@ -137,12 +88,15 @@ export function AppSidebar() {
       { title: 'Transaksi', href: '/admin/orders', icon: ShoppingBag },
       { title: 'Pembayaran', href: '/admin/payments', icon: CreditCard },
       { title: 'Laporan', href: '/admin/reports', icon: BarChart3 },
+      { title: 'Kurir', href: '/admin/couriers', icon: Truck },
+      { title: 'Analytics', href: '/admin/analytics', icon: LineChart },
     ],
     cashier: [
       { title: 'Dashboard', href: '/cashier/dashboard', icon: LayoutDashboard },
       { title: 'Transaksi', href: '/cashier/orders', icon: ShoppingBag },
       { title: 'Pelanggan', href: '/cashier/customers', icon: Users },
       { title: 'Pembayaran', href: '/cashier/payments', icon: CreditCard },
+      { title: 'Promo', href: '/cashier/promo', icon: Ticket },
     ],
     customer: [
       {
@@ -151,7 +105,9 @@ export function AppSidebar() {
         icon: LayoutDashboard,
       },
       { title: 'Order Saya', href: '/customer/orders', icon: Receipt },
-      { title: 'Riwayat', href: '/customer/history', icon: LineChart },
+      { title: 'Loyalty', href: '/customer/loyalty', icon: Award },
+      { title: 'Riwayat Poin', href: '/customer/points', icon: History },
+      { title: 'Profil', href: '/customer/profile', icon: User },
     ],
   };
 

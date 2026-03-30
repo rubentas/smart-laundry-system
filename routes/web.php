@@ -21,8 +21,6 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-
-
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -134,8 +132,10 @@ Route::middleware(['auth', 'role:owner'])
     Route::post('customers/{customer}/redeem', [LoyaltyController::class, 'redeemReward'])->name('customers.redeem');
     Route::get('loyalty/rewards-available', [LoyaltyController::class, 'rewardsAvailable'])->name('loyalty.rewards');
 
+    // Analytics
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
+    // Activity Logs
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('activity-logs/{log}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
     Route::get('activity-logs/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
@@ -152,6 +152,105 @@ Route::middleware(['auth', 'role:owner'])
 
 /*
 |--------------------------------------------------------------------------
+| Admin Cabang Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:branch_admin'])
+  ->prefix('admin')
+  ->name('admin.')
+  ->group(function () {
+
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
+    // Orders
+    Route::resource('orders', OrderController::class);
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::post('orders/{order}/apply-promo', [OrderController::class, 'applyPromo'])->name('orders.apply-promo');
+
+    // Customers
+    Route::resource('customers', CustomerController::class);
+
+    // Services
+    Route::resource('services', ServiceController::class);
+
+    // Couriers
+    Route::get('couriers', [CourierController::class, 'index'])->name('couriers.index');
+    Route::post('orders/{order}/assign-courier', [CourierController::class, 'assignOrder'])->name('orders.assign-courier');
+    Route::post('orders/{order}/update-delivery', [CourierController::class, 'updateDeliveryStatus'])->name('orders.update-delivery');
+
+    // Loyalty
+    Route::get('customers/{customer}/points', [LoyaltyController::class, 'customerPoints'])->name('customers.points');
+
+    // Analytics
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics');
+
+    // Reports
+    Route::prefix('reports')->name('reports.')->group(function () {
+      Route::get('/', [ReportController::class, 'index'])->name('index');
+      Route::get('generate', [ReportController::class, 'generate'])->name('generate');
+    });
+  });
+
+/*
+|--------------------------------------------------------------------------
+| Cashier Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:cashier'])
+  ->prefix('cashier')
+  ->name('cashier.')
+  ->group(function () {
+
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'cashier'])->name('dashboard');
+
+    // Orders
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');
+    Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+
+    // Promo
+    Route::post('orders/{order}/apply-promo', [OrderController::class, 'applyPromo'])->name('orders.apply-promo');
+    Route::post('promo/validate', [PromoValidationController::class, 'validatePromo'])->name('promo.validate');
+
+    // Customers
+    Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
+    Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+  });
+
+/*
+|--------------------------------------------------------------------------
+| Customer Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:customer'])
+  ->prefix('customer')
+  ->name('customer.')
+  ->group(function () {
+
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'customer'])->name('dashboard');
+
+    // Orders
+    Route::get('orders', [OrderController::class, 'customerOrders'])->name('orders');
+    Route::get('orders/{order}', [OrderController::class, 'customerShow'])->name('orders.show');
+
+    // Loyalty
+    Route::get('loyalty', [LoyaltyController::class, 'customerLoyalty'])->name('loyalty');
+    Route::get('points', [LoyaltyController::class, 'customerPoints'])->name('points');
+    Route::post('redeem', [LoyaltyController::class, 'redeemReward'])->name('redeem');
+
+    // Profile
+    Route::get('profile', [CustomerController::class, 'profile'])->name('profile');
+    Route::put('profile', [CustomerController::class, 'updateProfile'])->name('profile.update');
+  });
+
+/*
+|--------------------------------------------------------------------------
 | Public Payment Callbacks 
 |--------------------------------------------------------------------------
 */
@@ -162,6 +261,11 @@ Route::prefix('payment')->name('payment.')->group(function () {
   Route::get('error', [PaymentController::class, 'error'])->name('error');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Test Routes
+|--------------------------------------------------------------------------
+*/
 Route::get('/test-wa', function () {
   $whatsapp = new \App\Services\WhatsAppService();
   $order = Order::first();

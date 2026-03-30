@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\Order;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -101,7 +103,10 @@ class DashboardController extends Controller
     public function cashier()
     {
         $today = now()->format('Y-m-d');
-        $cashierId = auth()->id();
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        $cashierId = $authUser->id;
+        $branchId = $authUser->branch_id;
 
         // Statistik untuk kasir
         $stats = [
@@ -172,7 +177,9 @@ class DashboardController extends Controller
     // Admin
     public function admin()
     {
-        $branchId = auth()->user()->branch_id;
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        $branchId = $authUser->branch_id;
 
         if (! $branchId) {
             return redirect()->back()->with('error', 'Anda tidak memiliki cabang');
@@ -206,6 +213,12 @@ class DashboardController extends Controller
             'avgOrderValue' => Order::where('branch_id', $branchId)
                 ->where('status', '!=', 'cancelled')
                 ->avg('grand_total') ?? 0,
+
+            'activeCouriers' => Courier::where('status', 'available')->count(),
+            'pendingDelivery' => Order::where('branch_id', $branchId)
+                ->where('need_delivery', true)
+                ->where('delivery_status', 'pending')
+                ->count(),
         ];
 
         // Order hari ini
@@ -236,18 +249,27 @@ class DashboardController extends Controller
             'stats' => $stats,
             'todayOrders' => $todayOrders,
             'topServices' => $topServices,
-            'branchName' => auth()->user()->branch->name ?? 'Cabang Saya',
+            'branchName' => $authUser->branch->name ?? 'Cabang Saya',
         ]);
     }
 
     // Pelanggan
     public function customer()
     {
-        $customer = auth()->user()->customer; // Asumsi relasi user->customer
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Cari customer berdasarkan user_id atau langsung dari tabel customers
+        $customer = Customer::where('user_id', $user->id)->first();
 
         if (! $customer) {
-            // Kalau user adalah customer langsung (pakai tabel customers)
-            $customer = auth()->user();
+            // Fallback: coba cari berdasarkan email atau langsung ambil dari user
+            $customer = Customer::where('email', $user->email)->first();
+        }
+
+        if (! $customer) {
+            // Jika tidak ada, buat dummy atau redirect
+            return redirect()->back()->with('error', 'Data customer tidak ditemukan');
         }
 
         $customerId = $customer->id;
@@ -267,7 +289,7 @@ class DashboardController extends Controller
             'completedOrders' => Order::where('customer_id', $customerId)
                 ->where('status', 'completed')
                 ->count(),
-            'memberSince' => $customer->created_at->format('d M Y'),
+            'memberSince' => $customer->created_at ? $customer->created_at->format('d M Y') : date('d M Y'),
         ];
 
         // Order terbaru
@@ -288,10 +310,22 @@ class DashboardController extends Controller
                 ];
             });
 
+        // Data customer dengan loyalty points
+        $customerData = [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'email' => $customer->email,
+            'phone' => $customer->phone,
+            'address' => $customer->address,
+            'is_member' => $customer->is_member ?? false,
+            'loyalty_points' => $customer->loyalty_points ?? 0,
+            'membership_tier' => $customer->membership_tier ?? 'regular',
+        ];
+
         return Inertia::render('dashboard/customer', [
             'stats' => $stats,
             'recentOrders' => $recentOrders,
-            'customer' => $customer,
+            'customer' => $customerData,
         ]);
     }
 }

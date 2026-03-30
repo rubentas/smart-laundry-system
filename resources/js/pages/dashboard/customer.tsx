@@ -9,6 +9,10 @@ import {
   MapPin,
   AlertCircle,
   User,
+  Award,
+  Star,
+  TrendingUp,
+  Gift,
 } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
@@ -38,6 +42,8 @@ interface Customer {
   phone: string | null;
   address: string | null;
   is_member: boolean;
+  loyalty_points: number;
+  membership_tier: 'regular' | 'silver' | 'gold' | 'platinum';
 }
 
 interface Props {
@@ -91,6 +97,26 @@ export default function CustomerDashboard({
     },
   };
 
+  const getTierColor = (tier: string) => {
+    const colors = {
+      regular: 'from-gray-500 to-gray-600',
+      silver: 'from-gray-400 to-gray-500',
+      gold: 'from-amber-500 to-orange-500',
+      platinum: 'from-indigo-500 to-purple-500',
+    };
+    return colors[tier as keyof typeof colors] || colors.regular;
+  };
+
+  const getTierIcon = (tier: string) => {
+    const icons = {
+      regular: <Star className="h-5 w-5" />,
+      silver: <Star className="h-5 w-5" />,
+      gold: <Star className="h-5 w-5 fill-amber-500" />,
+      platinum: <Award className="h-5 w-5" />,
+    };
+    return icons[tier as keyof typeof icons] || icons.regular;
+  };
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-8">
@@ -113,7 +139,7 @@ export default function CustomerDashboard({
           </div>
 
           {/* Stats Cards */}
-          <div className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {/* Total Order */}
             <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex items-start justify-between">
@@ -197,6 +223,62 @@ export default function CustomerDashboard({
                   <CheckCircle className="h-5 w-5 text-emerald-600" />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Loyalty Program Card */}
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <Award className="h-5 w-5 text-indigo-600" />
+              Loyalty Program
+            </h3>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white">
+                <p className="text-sm opacity-90">Total Poin</p>
+                <p className="text-3xl font-bold">
+                  {customer.loyalty_points?.toLocaleString() || 0}
+                </p>
+              </div>
+
+              <div
+                className={`rounded-lg bg-gradient-to-r ${getTierColor(customer.membership_tier)} p-4 text-white`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm opacity-90">Membership Tier</p>
+                  {getTierIcon(customer.membership_tier)}
+                </div>
+                <p className="text-2xl font-bold capitalize">
+                  {customer.membership_tier}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 p-4 text-white">
+                <p className="text-sm opacity-90">Points Multiplier</p>
+                <p className="text-2xl font-bold">
+                  {customer.membership_tier === 'regular' && '1x'}
+                  {customer.membership_tier === 'silver' && '1.2x'}
+                  {customer.membership_tier === 'gold' && '1.5x'}
+                  {customer.membership_tier === 'platinum' && '2x'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <Link
+                href="/customer/loyalty"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                <Gift className="h-4 w-4" />
+                Tukar Poin
+              </Link>
+              <Link
+                href="/customer/points"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Riwayat Poin
+              </Link>
             </div>
           </div>
 
@@ -404,7 +486,7 @@ export default function CustomerDashboard({
                         </td>
                         <td className="px-6 py-4">
                           <Link
-                            href={`/orders/${order.id}`}
+                            href={`/customer/orders/${order.id}`}
                             className="text-indigo-600 hover:text-indigo-800"
                           >
                             <Eye className="h-4 w-4" />
