@@ -19,6 +19,7 @@ import {
   Settings2,
   Truck,
   Award,
+  Database,
 } from 'lucide-react';
 import { useState } from 'react';
 import BranchSelector from '@/components/branch-selector';
@@ -117,6 +118,11 @@ export function AppSidebar() {
         title: 'AI Insights',
         href: '/owner/ai/insights',
         icon: Brain,
+      },
+      {
+        title: 'Backup',
+        href: '/owner/backups',
+        icon: Database,
       },
       {
         title: 'Pengaturan',

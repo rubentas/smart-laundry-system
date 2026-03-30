@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchSessionController;
 use App\Http\Controllers\BusinessSettingController;
@@ -138,6 +139,15 @@ Route::middleware(['auth', 'role:owner'])
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('activity-logs/{log}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
     Route::get('activity-logs/export', [ActivityLogController::class, 'export'])->name('activity-logs.export');
+
+    // Backup routes
+    Route::prefix('backups')->name('backups.')->group(function () {
+      Route::get('/', [BackupController::class, 'index'])->name('index');
+      Route::post('/create', [BackupController::class, 'create'])->name('create');
+      Route::get('/download/{filename}', [BackupController::class, 'download'])->name('download');
+      Route::delete('/delete/{filename}', [BackupController::class, 'delete'])->name('delete');
+      Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
+    });
   });
 
 /*

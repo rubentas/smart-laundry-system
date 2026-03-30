@@ -33,6 +33,26 @@ return Application::configure(basePath: dirname(__DIR__))
       \App\Http\Middleware\LogUserActivity::class,
     ]);
   })
+  ->withSchedule(function ($schedule) {
+    // Backup database setiap hari Minggu jam 01:00
+    $schedule->command('backup:run --only-db')
+      ->weekly()
+      ->sundays()
+      ->at('01:00')
+      ->environments(['production']);
+
+    // Hapus backup lama setiap hari jam 02:00
+    $schedule->command('backup:clean')
+      ->daily()
+      ->at('02:00')
+      ->environments(['production']);
+
+    // Backup harian untuk development (testing)
+    $schedule->command('backup:run --only-db')
+      ->daily()
+      ->at('03:00')
+      ->environments(['local']);
+  })
   ->withExceptions(function (Exceptions $exceptions): void {
     //
   })->create();
