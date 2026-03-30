@@ -42,4 +42,27 @@ class PromoController extends Controller
 
     return redirect()->route('owner.promos.index')->with('success', 'Promo berhasil dibuat');
   }
+
+  public function cashierIndex(Request $request)
+  {
+    $query = Promo::query();
+
+    if ($request->search) {
+      $query->where('code', 'like', "%{$request->search}%")
+        ->orWhere('name', 'like', "%{$request->search}%");
+    }
+
+    if ($request->status === 'active') {
+      $query->active();
+    } elseif ($request->status === 'expired') {
+      $query->where('end_date', '<', now());
+    }
+
+    $promos = $query->latest()->paginate(12);
+
+    return Inertia::render('cashier/promo/index', [
+      'promos' => $promos,
+      'filters' => $request->only(['search', 'status']),
+    ]);
+  }
 }

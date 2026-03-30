@@ -215,6 +215,7 @@ Route::middleware(['auth', 'role:cashier'])
     // Promo
     Route::post('orders/{order}/apply-promo', [OrderController::class, 'applyPromo'])->name('orders.apply-promo');
     Route::post('promo/validate', [PromoValidationController::class, 'validatePromo'])->name('promo.validate');
+    Route::get('promo', [PromoController::class, 'cashierIndex'])->name('promo.index');
 
     // Customers
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
