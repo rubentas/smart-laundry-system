@@ -27,7 +27,7 @@ class BranchController extends Controller
   {
     Branch::create($request->validated());
 
-    return redirect()->route('branches.index')
+    return redirect()->route('owner.branches.index')
       ->with('success', 'Cabang berhasil ditambahkan.');
   }
 
